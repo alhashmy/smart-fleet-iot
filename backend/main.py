@@ -2,15 +2,17 @@ import os
 import random
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import RedirectResponse
 from pydantic import BaseModel
 from typing import Optional, List
 import psycopg2
 from psycopg2.extras import RealDictCursor
 
-# تعريف محرك الـ FastAPI بالخط العريض في بداية الملف لكي يراه سيرفر Render فوراً
+# تعريف محرك الـ FastAPI
 app = FastAPI(title="Smart Route Fleet IoT Backend")
 
-# تفعيل نظام الأمان CORS لكي يستقبل السيرفر بث الـ GPS من الموبايل واللابتوب بدون حظر
+# تفعيل نظام الأمان CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -24,7 +26,7 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 
 def get_db_connection():
     if not DATABASE_URL:
-        raise HTTPException(status_code=500, detail="Database connection string (DATABASE_URL) is missing inside Environment Variables!")
+        raise HTTPException(status_code=500, detail="Database connection string missing!")
     return psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor)
 
 # --- نماذج البيانات المدخلة (Pydantic Models) ---
@@ -54,7 +56,7 @@ class ShipmentCreate(BaseModel):
 class StatusUpdate(BaseModel):
     status: str
 
-# --- 1. بروتوكولات الـ APIs الخاصة بالكباتن (Drivers CRUD) ---
+# --- 1. بروتوكولات الـ APIs الخاصة بالكباتن (Drivers) ---
 @app.get("/api/drivers")
 def get_drivers():
     conn = get_db_connection()
@@ -103,7 +105,7 @@ def delete_driver(driver_id: int):
     conn.close()
     return {"message": "Driver deleted"}
 
-# --- 2. بروتوكولات الـ APIs الخاصة بالشحنات والطرود ---
+# --- 2. بروتوكولات الـ APIs الخاصة بالشحنات ---
 @app.get("/api/shipments")
 def get_shipments():
     conn = get_db_connection()
@@ -143,7 +145,7 @@ def update_shipment_status(tracking_id: str, update: StatusUpdate):
     conn.close()
     return {"status": "updated"}
 
-# --- 3. بروتوكولات الـ APIs الخاصة بالتنبيهات والمخالفات ---
+# --- 3. بروتوكولات الـ APIs الخاصة بالتنبيهات ---
 @app.get("/api/alerts")
 def get_alerts():
     conn = get_db_connection()
@@ -163,3 +165,13 @@ def create_alert(alert: StatusUpdate):
     cur.close()
     conn.close()
     return {"status": "logged"}
+
+# ================= 🌐 ربط ودمج واجهات الفرونت إند بالسيرفر العالمي =================
+
+# 1. جلب ومزامنة مجلد الواجهات لكي يصبح متاحاً عبر الإنترنت
+app.mount("/frontend", StaticFiles(directory="frontend"), name="frontend")
+
+# 2. تحويل الرابط الرئيسي الفارغ لكي يفتح لوحة التحكم فوراً بدلاً من خطأ 404
+@app.get("/")
+def read_root():
+    return RedirectResponse(url="/frontend/index.html")
