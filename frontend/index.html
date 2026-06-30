@@ -3,280 +3,276 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>لوحة التحكم التنفيذية | نظام المسار الذكي المتكامل</title>
-    
-    <!-- مكتبات العرض الخارجي -->
+    <title>SMART ROUTE | لوحة التحكم السحابية اللحظية</title>
+    <!-- Leaflet Map CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link rel="stylesheet" href="style.css">
+    <style>
+        :root {
+            --bg-base: #030712;
+            --surface: #0b1329;
+            --surface-glass: rgba(11, 19, 41, 0.65);
+            --primary: #00f2fe;
+            --primary-glow: rgba(0, 242, 254, 0.3);
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+            --border-cyber: rgba(0, 242, 254, 0.15);
+        }
+
+        body {
+            margin: 0; padding: 0; box-sizing: border-box;
+            background-color: var(--bg-base); color: var(--text-main);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex; height: 100vh; overflow: hidden;
+        }
+
+        /* المكونات الرئيسية للتصميم */
+        .cyber-sidebar {
+            width: 260px; background-color: #050b18;
+            border-left: 1px solid var(--border-cyber);
+            display: flex; flex-direction: column; padding: 20px; box-sizing: border-box;
+        }
+
+        .cyber-logo {
+            font-size: 22px; font-weight: 900; color: #fff; text-shadow: 0 0 10px var(--primary-glow);
+            margin-bottom: 30px; text-align: center; border-bottom: 1px solid var(--border-cyber); padding-bottom: 15px;
+        }
+
+        .nav-item {
+            padding: 12px 15px; border-radius: 8px; color: var(--text-muted); cursor: pointer;
+            margin-bottom: 8px; font-weight: 600; transition: all 0.2s ease; display: flex; align-items: center;
+        }
+        .nav-item:hover, .nav-item.active {
+            background: rgba(0, 242, 254, 0.1); color: var(--primary);
+            box-shadow: inset 3px 0 0 var(--primary);
+        }
+
+        .main-content-wrapper {
+            flex: 1; display: flex; flex-direction: column; height: 100%; position: relative;
+        }
+
+        .view-section { width: 100%; height: 100%; box-sizing: border-box; }
+        .hidden { display: none !important; }
+        .active-view { display: flex !important; }
+
+        /* شاشة الخريطة والمراقبة */
+        #tracking-section { display: flex; flex-direction: row; width: 100%; height: 100%; }
+        .map-container-box { flex: 1; height: 100%; position: relative; }
+        #map { width: 100%; height: 100%; }
+
+        .orders-sidebar-panel {
+            width: 320px; background: #060c1a; border-right: 1px solid var(--border-cyber);
+            display: flex; flex-direction: column; padding: 15px; box-sizing: border-box; overflow-y: auto;
+        }
+
+        /* كروت وجداول نيون */
+        .cyber-order-item-card {
+            background: rgba(0,0,0,0.3); border: 1px solid var(--border-cyber); padding: 12px;
+            border-radius: 8px; margin-bottom: 12px; font-size: 13px;
+        }
+        .cyber-select-mini { background: #000; color: var(--primary); border: 1px solid var(--border-cyber); border-radius: 4px; padding: 2px 5px; }
+        .btn-cyber-primary { background: var(--primary); border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
+
+        /* الجداول العامة للبيانات */
+        .table-view-container { flex: 1; padding: 25px; overflow-y: auto; background: radial-gradient(circle at top, #0b1426 0%, #030712 100%); }
+        .cyber-table { width: 100%; border-collapse: collapse; margin-top: 15px; text-align: right; }
+        .cyber-table th { background: rgba(0, 242, 254, 0.05); color: var(--primary); padding: 12px; border-bottom: 2px solid var(--border-cyber); }
+        .cyber-table td { padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+
+        /* الكاونترات العلوية لمراحل الشحن */
+        .counters-strip { display: flex; gap: 10px; padding: 10px; background: #050a14; border-bottom: 1px solid var(--border-cyber); overflow-x: auto; }
+        .status-card-cyber { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); padding: 8px 15px; border-radius: 6px; cursor: pointer; min-width: 100px; text-align: center; }
+        .status-card-cyber.active { border-color: var(--primary); background: rgba(0, 242, 254, 0.05); }
+        .status-card-cyber span { display: block; font-size: 18px; font-weight: bold; color: var(--primary); }
+        .status-card-cyber label { font-size: 11px; color: var(--text-muted); cursor: pointer; }
+
+        /* استايل قسم حول النظام الإبداعي */
+        .about-glass-panel {
+            background: var(--surface-glass); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+            border: 1px solid var(--border-cyber); padding: 40px; border-radius: 20px; max-width: 850px; margin: 20px auto;
+            box-shadow: 0 0 40px rgba(0, 242, 254, 0.05); position: relative; overflow: hidden;
+        }
+        .about-glass-panel::before {
+            content: ''; position: absolute; top: 0; right: 0; width: 150px; height: 150px;
+            background: linear-gradient(135deg, var(--primary-glow), transparent); filter: blur(30px);
+        }
+        .tech-pill {
+            display: inline-block; background: rgba(0, 242, 254, 0.08); border: 1px solid var(--border-cyber);
+            padding: 6px 14px; border-radius: 20px; font-size: 12px; color: var(--primary); margin: 4px; font-weight: 600;
+        }
+
+        .status-badge { padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; }
+        .status-badge.active { background: rgba(16, 185, 129, 0.15); color: var(--success); }
+        .status-badge.warning { background: rgba(245, 158, 11, 0.15); color: var(--warning); }
+        .table-avatar { width: 35px; height: 35px; border-radius: 50%; object-fit: cover; border: 1px solid var(--border-cyber); }
+    </style>
 </head>
 <body>
 
-    <div class="neon-grid-bg"></div>
+    <!-- القائمة الجانبية للنظام -->
+    <div class="cyber-sidebar">
+        <div class="cyber-logo">SMART ROUTE 🛡️</div>
+        <div class="nav-item active" data-target="tracking-section">🌐 الخريطة والمراقبة</div>
+        <div class="nav-item" data-target="shipments-section">📦 إدارة الشحنات</div>
+        <div class="nav-item" data-target="finance-section">💵 الحسابات المالية</div>
+        <div class="nav-item" data-target="drivers-section">👥 شؤون الكباتن</div>
+        <div class="nav-item" data-target="about-section" style="color: #00f2fe; border: 1px dashed rgba(0,242,254,0.3);">📘 حول النظام والطلاب</div>
+        <div style="flex: 1;"></div>
+        <div class="nav-item" id="logout-btn" style="color: var(--danger);">🚪 تسجيل الخروج</div>
+    </div>
 
-    <div id="app-view" class="main-app-container">
+    <!-- حاوية العرض الرئيسية للمحتوى المتغير -->
+    <div class="main-content-wrapper">
         
-        <!-- الشريط العلوي التكنولوجي الاحترافي -->
-        <header class="top-navbar">
-            <div class="logo-section">
-                <div class="cyber-pulse-node"></div>
-                <span class="logo-text">المسار الذكي <span class="logo-sub">MAIN NODE v3.5</span></span>
+        <!-- 1. شاشة المراقبة والخريطة الرئيسية -->
+        <div id="tracking-section" class="view-section active-view">
+            <div class="orders-sidebar-panel">
+                <h4 id="dynamic-list-title" style="margin-top:0; color:var(--primary);">طلبات قيد المراجعة:</h4>
+                <div id="dynamic-orders-container"></div>
             </div>
-            <nav class="nav-links">
-                <button class="nav-item active" data-target="tracking-section">🛰️ التتبع والـ IoT اللحظي</button>
-                <button class="nav-item" data-target="shipments-section">📦 مستودع الشحنات الذكي</button>
-                <button class="nav-item" data-target="analytics-section">📊 مجسات البيانات والرسوم</button>
-                <button class="nav-item" data-target="accounts-section">💰 التصفية المالية والـ ACID</button>
-                <a href="drivers.html" class="nav-link-btn">👥 بوابة الكباتن (CRUD) ↗</a>
-            </nav>
-            <div class="user-profile">
-                <button class="alerts-btn-cyber animate-pulse" id="alerts-toggle-btn">المخالفات الحية <span id="alerts-badge">0</span></button>
-                <div class="profile-info">
-                    <span class="user-name">المهندس عبد القادر صباح</span>
-                    <span class="user-role">OPERATIONS COMMANDER</span>
+            <div class="map-container-box">
+                <!-- شريط كاونترات المراحل التفاعلي -->
+                <div class="counters-strip">
+                    <div class="status-card-cyber active" onclick="filterFleet(this, 'عند التاجر')"><span id="count-merchant">0</span><label>عند التاجر</label></div>
+                    <div class="status-card-cyber" onclick="filterFleet(this, 'في الطريق للتاجر')"><span id="count-to-merchant">0</span><label>للتوصيل للتاجر</label></div>
+                    <div class="status-card-cyber" onclick="filterFleet(this, 'تم الاستلام وفي الطريق للمخزن')"><span id="count-to-warehouse">0</span><label>بأنتظار المخزن</label></div>
+                    <div class="status-card-cyber" onclick="filterFleet(this, 'في المخزن وقيد الفرز')"><span id="count-sorting">0</span><label>قيد الفرز</label></div>
+                    <div class="status-card-cyber" onclick="filterFleet(this, 'تم استلام من قبل مندوب المحافظة')"><span id="count-province-driver">0</span><label>مع مندوب المحافظة</label></div>
+                    <div class="status-card-cyber" onclick="filterFleet(this, 'في مكتب المحافظة')"><span id="count-province-office">0</span><label>بمكتب المحافظة</label></div>
+                    <div class="status-card-cyber" onclick="filterFleet(this, 'في الطريق للزبون')"><span id="count-to-customer">0</span><label>في الطريق للزبون</label></div>
+                    <div class="status-card-cyber" onclick="filterFleet(this, 'مكتمل')"><span id="count-completed">0</span><label>تم التسليم ✔</label></div>
                 </div>
-                <button id="logout-btn" class="btn-cyber-logout">خروج</button>
+                <div id="map"></div>
             </div>
-        </header>
+        </div>
 
-        <!-- محتوى السستم المتشعب التفاعلي -->
-        <div class="app-content-body">
-            
-            <!-- تبويب 1: التتبع اللحظي والخرائط والعمليات الفورية -->
-            <section id="tracking-section" class="view-section active-view">
-                <div class="tracking-layout">
-                    <aside class="sidebar">
-                        
-                        <!-- الخانة الجديدة المضافة أعلى تبويب حالة الأسطول لإنشاء طلب مباشر مصغر -->
-                        <button class="btn-cyber-primary w-100" id="open-direct-order-btn" style="margin-bottom: 5px; font-size: 13px; letter-spacing: 0.5px;">⚡ إنشاء طلب مباشر فوري</button>
-                        
-                        <h4>حالة حركة الأسطول والطلبات</h4>
-                        <div class="status-list scrollable-status-list">
-                            <div class="status-card-cyber b-orange" onclick="filterFleet(this, 'عند التاجر')">
-                                <span class="status-title">عند التاجر</span><span class="status-count" id="count-merchant">0</span>
-                            </div>
-                            <div class="status-card-cyber b-orange" onclick="filterFleet(this, 'في الطريق للتاجر')">
-                                <span class="status-title">في الطريق للتاجر</span><span class="status-count" id="count-to-merchant">0</span>
-                            </div>
-                            <div class="status-card-cyber b-blue" onclick="filterFleet(this, 'تم الاستلام وفي الطريق للمخزن')">
-                                <span class="status-title">تم الاستلام وفي الطريق للمخزن</span><span class="status-count" id="count-to-warehouse">0</span>
-                            </div>
-                            <div class="status-card-cyber b-blue" onclick="filterFleet(this, 'في المخزن وقيد الفرز')">
-                                <span class="status-title">في المخزن وقيد الفرز</span><span class="status-count" id="count-sorting">0</span>
-                            </div>
-                            <div class="status-card-cyber b-blue" onclick="filterFleet(this, 'تم استلام من قبل مندوب المحافظة')">
-                                <span class="status-title">استلام مندوب المحافظة</span><span class="status-count" id="count-province-driver">0</span>
-                            </div>
-                            <div class="status-card-cyber b-blue" onclick="filterFleet(this, 'في مكتب المحافظة')">
-                                <span class="status-title">في مكتب المحافظة</span><span class="status-count" id="count-province-office">0</span>
-                            </div>
-                            <div class="status-card-cyber b-blue active" onclick="filterFleet(this, 'في الطريق للزبون')">
-                                <span class="status-title">في الطريق للزبون</span><span class="status-count" id="count-to-customer">0</span>
-                            </div>
-                            <div class="status-card-cyber b-green" onclick="filterFleet(this, 'مكتمل')">
-                                <span class="status-title">مكتمل</span><span class="status-count" id="count-completed">0</span>
-                            </div>
-                        </div>
+        <!-- 2. شاشة إدارة الطرود والشحنات -->
+        <div id="shipments-section" class="view-section table-view-container hidden">
+            <h2 style="color: var(--primary);">📦 معالجة وتوليد الطرود السحابية</h2>
+            <form id="shipment-creation-form" style="background: rgba(255,255,255,0.02); padding: 20px; border-radius: 8px; border: 1px solid var(--border-cyber); display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 25px;">
+                <div><label>اسم البيج / الراسل</label><input type="text" id="ship-sender" required style="width:100%; background:#000; color:#fff; border:1px solid var(--border-cyber); padding:8px; border-radius:4px;"></div>
+                <div><label>اسم الزبون المستلم</label><input type="text" id="ship-receiver" required style="width:100%; background:#000; color:#fff; border:1px solid var(--border-cyber); padding:8px; border-radius:4px;"></div>
+                <div><label>رقم هاتف الزبون</label><input type="text" id="ship-phone" required style="width:100%; background:#000; color:#fff; border:1px solid var(--border-cyber); padding:8px; border-radius:4px;"></div>
+                <div><label>العنوان / منطقة الزبون</label><input type="text" id="ship-address" required style="width:100%; background:#000; color:#fff; border:1px solid var(--border-cyber); padding:8px; border-radius:4px;"></div>
+                <div>
+                    <label>نوع التوصيل</label>
+                    <select id="ship-type" onchange="calculateShipmentCost()" style="width:100%; background:#000; color:#fff; border:1px solid var(--border-cyber); padding:8px; border-radius:4px;">
+                        <option value="standard">توصيل عيار عادي (5,000 د.ع)</option>
+                        <option value="express">توصيل سريع مستعجل (8,000 د.ع)</option>
+                    </select>
+                </div>
+                <div><label>مبلغ الـ COD المستقطع من الزبون</label><input type="number" id="ship-cod" required style="width:100%; background:#000; color:#fff; border:1px solid var(--border-cyber); padding:8px; border-radius:4px;"></div>
+                <div>
+                    <label>الكابتن المكلف بالإحالة</label>
+                    <select id="ship-assign-driver" style="width:100%; background:#000; color:#fff; border:1px solid var(--border-cyber); padding:8px; border-radius:4px;"></select>
+                </div>
+                <div style="display: flex; align-items: center; font-weight: bold; color: var(--primary);">أجور شركة الشحن الكلية: &nbsp;<span id="calculated-cost">5,000</span> &nbsp;د.ع</div>
+                <div><button type="submit" style="width:100%; padding:10px; background:var(--primary); border:none; border-radius:4px; font-weight:bold; cursor:pointer; color:#000;">إصدار الباركود وحفظ بـ Neon DB 🚀</button></div>
+            </form>
+            <table class="cyber-table">
+                <thead><tr><th>رقم التتبع</th><th>الراسل</th><th>المستلم</th><th>الوجهة</th><th>الكابتن المكلف</th><th>المبلغ الكلي</th><th>حالة الطرد الحالية</th></tr></thead>
+                <tbody id="shipments-table-body"></tbody>
+            </table>
+        </div>
 
-                        <!-- قائمة عرض الطلبات الحالية المفلترة مع سستم منسدلة التقديم اللحظي للمراحل -->
-                        <div class="quick-drivers-list">
-                            <h4 id="dynamic-list-title">الطلبات المسجلة في هذا النطاق:</h4>
-                            <div id="dynamic-orders-container" class="dynamic-orders-scroll"></div>
-                        </div>
-                    </aside>
+        <!-- 3. شاشة الحسابات المالية المركبة -->
+        <div id="finance-section" class="view-section table-view-container hidden">
+            <h2 style="color: var(--primary);">💵 الخزينة والصفاء المالي المباشر</h2>
+            <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 25px;">
+                <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid var(--success); padding: 15px; border-radius: 8px;">💼 الكود المالي الكلي المتداول: <h3 id="fin-total-sales" style="margin: 5px 0 0 0; color: var(--success);">0 د.ع</h3></div>
+                <div style="background: rgba(245, 158, 11, 0.08); border: 1px solid var(--warning); padding: 15px; border-radius: 8px;">⏳ أموال معلقة بعهدة الكباتن: <h3 id="fin-cash-with-drivers" style="margin: 5px 0 0 0; color: var(--warning);">0 د.ع</h3></div>
+                <div style="background: rgba(0, 242, 254, 0.08); border: 1px solid var(--primary); padding: 15px; border-radius: 8px;">📈 صافي أرباح شركة اللوجستيات: <h3 id="fin-delivery-profits" style="margin: 5px 0 0 0; color: var(--primary);">0 د.ع</h3></div>
+            </div>
+            <table class="cyber-table">
+                <thead><tr><th>اسم المندوب</th><th>عدد طرود العهدة</th><th>مجموع مبيعات الواصل</th><th>أرباح التوصيل الصافية</th><th>حالة الحساب الجاري</th><th>التحصيل والتسوية</th></tr></thead>
+                <tbody id="finance-table-body"></tbody>
+            </table>
+        </div>
+
+        <!-- 4. شاشة التحكم وحسابات الكباتن -->
+        <div id="drivers-section" class="view-section table-view-container hidden">
+            <h2 style="color: var(--primary);">👥 الهوية الرقمية للكباتن وشريحة الـ IoT</h2>
+            <table class="cyber-table">
+                <thead><tr><th>الصورة الشخصية</th><th>معرف الـ ID</th><th>الاسم الكامل</th><th>رقم الهاتف</th><th>شاحنة العهدة</th><th>منطقة التغطية الأساسية</th><th>حالة المستشعر السحابي</th><th>إجراءات التأمين</th></tr></thead>
+                <tbody id="crud-drivers-table-body"></tbody>
+            </table>
+        </div>
+
+        <!-- 5. 🌟 شاشة حول النظام والطلاب المطورة بجرافيكس عالي 🌟 -->
+        <div id="about-section" class="view-section table-view-container hidden">
+            <div class="about-glass-panel">
+                <div style="text-align: center; margin-bottom: 30px;">
+                    <div style="font-size: 50px; text-shadow: 0 0 20px var(--primary-glow); margin-bottom: 10px;">🛡️</div>
+                    <h1 style="color: var(--primary); margin: 0; font-size: 26px; text-shadow: 0 0 10px var(--primary-glow);">نظام SMART ROUTE الذكي لإدارة الأسطول والأمن السيبراني</h1>
+                    <p style="color: var(--text-muted); font-size: 14px; margin-top: 5px;">مشروع تخرج متقدم في هندسة التقنيات الأمنية وحلول التتبع الجغرافي السحابي لايف</p>
+                </div>
+
+                <h3 style="color: var(--primary); border-right: 3px solid var(--primary); padding-right: 10px; font-size: 16px;">📑 الخلاصة الهندسية والتقنية للمشروع:</h3>
+                <p style="color: #d1d5db; font-size: 14px; line-height: 1.8; text-align: justify; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.03);">
+                    هو عبارة عن نظام هندسي متكامل للتحكم بالأسطول اللوجستي وحماية خطوط نقل البيانات لحظياً من خلال الـ Full-Stack السحابي. يعمل النظام على استقطاب بث الـ GPS الفعلي من الأجهزة الطرفية وهواتف السواقين بصفتها عُقداً إنترنتية 
+                    <strong>(IoT Nodes)</strong>، وحقن البيانات بسيرفرات مستقلة سريعة الاستجابة مبنية بـ <strong>FastAPI Async Architecture</strong> وتجميدها داخل قاعدة بيانات <strong>Neon PostgreSQL Cloud Server</strong> الموحدة والمحمية من الاختراق عبر بروتوكولات تشفير القنوات الآمنة.
+                </p>
+
+                <h3 style="color: var(--primary); border-right: 3px solid var(--primary); padding-right: 10px; font-size: 16px; margin-top: 30px;">🛠️ التقنيات واللغات المستخدمة بالنظام (Tech Stack):</h3>
+                <div style="margin-bottom: 30px;">
+                    <span class="tech-pill">Python 3 (FastAPI Server)</span>
+                    <span class="tech-pill">Neon Cloud DB (PostgreSQL Engine)</span>
+                    <span class="tech-pill">Asynchronous REST APIs</span>
+                    <span class="tech-pill">HTML5 Canvas / CSS3 Variable Glows</span>
+                    <span class="tech-pill">JavaScript (Vanilla Live-Fetch Engine)</span>
+                    <span class="tech-pill">Leaflet Intelligent Mapping Core</span>
+                    <span class="tech-pill">Advanced CORS Cyber Security Handlers</span>
+                </div>
+
+                <div style="border-top: 1px solid var(--border-cyber); padding-top: 25px; text-align: center;">
+                    <h3 style="color: #fff; font-size: 16px; margin-bottom: 5px;">🏛️ تم إنجاز وهندسة هذا العمل من قبل طلاب:</h3>
+                    <h4 style="color: var(--text-muted); margin: 0 0 20px 0; font-size: 13px; font-weight: 500;">جامعة آشور الدولية - كلية الهندسة - قسم هندسة الأمن السيبراني</h4>
                     
-                    <div class="map-wrapper">
-                        <main id="map" class="map-container"></main>
-                        
-                        <!-- لوحة قراءات الحساسات المنبثقة -->
-                        <div id="iot-details-panel" class="iot-panel-cyber hidden">
-                            <button class="close-panel-btn" onclick="closeIotPanel()">×</button>
-                            <div class="panel-header-profile">
-                                <img id="panel-driver-img" src="https://via.placeholder.com/60" class="panel-avatar">
-                                <div>
-                                    <h4 id="panel-driver-name">كابتن</h4>
-                                    <p id="panel-vehicle-info">مركبة</p>
-                                </div>
-                            </div>
-                            <div class="iot-grid">
-                                <div class="iot-box">⚡ السرعة: <span id="panel-speed">0</span> كم/س</div>
-                                <div class="iot-box">⛽ الوقود: <span id="panel-fuel">0</span>%</div>
-                                <div class="iot-box">📍 خط العرض: <span id="panel-lat">0</span></div>
-                                <div class="iot-box">📍 خط الطول: <span id="panel-lng">0</span></div>
-                            </div>
-                            <div class="panel-status-tag" id="panel-status">مستقر</div>
+                    <!-- عرض شبكي احترافي للأبطال -->
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; max-width: 600px; margin: 0 auto; text-align: right;">
+                        <div style="background: rgba(0,0,0,0.3); padding: 12px 18px; border-radius: 8px; border: 1px solid rgba(0,242,254,0.1); display:flex; justify-content:space-between;">
+                            <span style="font-weight:600; color:#fff;">سجاد زين العابدين حامد</span><span style="color:var(--primary); font-family:monospace; font-weight:bold;">Group C</span>
                         </div>
-                        <div class="live-console-log">
-                            <div class="console-header">📟 TELEMETRY ENGINE LOGS // بث الحساسات المستمر لوحدات التحقق وقاعدة البيانات</div>
-                            <div class="console-body" id="console-log-text"></div>
+                        <div style="background: rgba(0,0,0,0.3); padding: 12px 18px; border-radius: 8px; border: 1px solid rgba(0,242,254,0.1); display:flex; justify-content:space-between;">
+                            <span style="font-weight:600; color:#fff;">ذو الفقار اسعد حميد</span><span style="color:var(--primary); font-family:monospace; font-weight:bold;">Group C</span>
+                        </div>
+                        <div style="background: rgba(0,0,0,0.3); padding: 12px 18px; border-radius: 8px; border: 1px solid rgba(0,242,254,0.1); display:flex; justify-content:space-between;">
+                            <span style="font-weight:600; color:#fff;">علي رضا حسن حاج مراد</span><span style="color:var(--primary); font-family:monospace; font-weight:bold;">Group D</span>
+                        </div>
+                        <div style="background: rgba(0,0,0,0.3); padding: 12px 18px; border-radius: 8px; border: 1px solid rgba(0,242,254,0.1); display:flex; justify-content:space-between;">
+                            <span style="font-weight:600; color:#fff;">مصطفى علي حسين</span><span style="color:var(--primary); font-family:monospace; font-weight:bold;">Group F</span>
+                        </div>
+                        <div style="background: rgba(0,0,0,0.3); padding: 12px 18px; border-radius: 8px; border: 1px solid rgba(0,242,254,0.1); display:flex; justify-content:space-between; grid-column: span 2;">
+                            <span style="font-weight:600; color:#fff;">علي ليث علي</span><span style="color:var(--primary); font-family:monospace; font-weight:bold;">Group F</span>
                         </div>
                     </div>
                 </div>
-            </section>
-
-            <!-- تبويب 2: مستودع الشحنات والطرود المتشعبة -->
-            <section id="shipments-section" class="view-section hidden">
-                <div class="section-container">
-                    <div class="view-header">
-                        <h2>نظام جدولة وإنشاء الشحنات والطرود المتشعبة</h2>
-                        <p>توليد قيود الشحنات، تتبع خط سير الطرد، احتساب كلفة التوصيل، وتعيين الكابتن المسؤول.</p>
-                    </div>
-                    <div class="management-grid">
-                        <div class="panel-form-card">
-                            <h3>📦 إنشاء وتوليد شحنة جديدة</h3>
-                            <form id="shipment-creation-form">
-                                <div class="form-group">
-                                    <label>اسم الراسل / التاجر (البيج)</label>
-                                    <input type="text" id="ship-sender" required class="cyber-input" placeholder="مثال: بيج النوارس للأزياء">
-                                </div>
-                                <div class="form-group">
-                                    <label>اسم المستلم النهائي</label>
-                                    <input type="text" id="ship-receiver" required class="cyber-input" placeholder="مثال: أحمد جاسم العلي">
-                                </div>
-                                <div class="form-group">
-                                    <label>رقم هاتف المستلم</label>
-                                    <input type="tel" id="ship-phone" required class="cyber-input" placeholder="077xxxxxxxx">
-                                </div>
-                                <div class="form-grid-3">
-                                    <div class="form-group">
-                                        <label>منطقة الزبون (بغداد)</label>
-                                        <input type="text" id="ship-address" required class="cyber-input" placeholder="مثال: المنصور">
-                                    </div>
-                                    <div class="form-group">
-                                        <label>وزن الطرد</label>
-                                        <input type="number" id="ship-weight" value="1" required class="cyber-input">
-                                    </div>
-                                    <div class="form-group">
-                                        <label>نوع الشحن</label>
-                                        <select id="ship-type" class="cyber-input" onchange="calculateShipmentCost()">
-                                            <option value="standard">شحن اعتيادي (5,000 د.ع)</option>
-                                            <option value="express">شحن سريع (8,000 د.ع)</option>
-                                        </select>
-                                    </div>
-                                </div>
-                                <div class="form-group">
-                                    <label>مبلغ الطلب الصافي كاش الكلي (COD)</label>
-                                    <input type="number" id="ship-cod" required class="cyber-input" placeholder="سعر الطلب بالكامل بالدينار">
-                                </div>
-                                <div class="form-group">
-                                    <label>تعيين الكابتن المسؤول عن التوصيل</label>
-                                    <select id="ship-assign-driver" class="cyber-input" required></select>
-                                </div>
-                                <div class="cost-summary-box">
-                                    💰 إجمالي كلفة الشحن والخدمة: <span id="calculated-cost">5,000</span> د.ع
-                                </div>
-                                <button type="submit" class="btn-cyber-success w-100">تثبيت القيد وتوليد الباركود</button>
-                            </form>
-                        </div>
-                        <div class="panel-table-card">
-                            <h3>📋 مستودع قيود الطرود الفعالة في السستم</h3>
-                            <div class="table-responsive">
-                                <table class="custom-table">
-                                    <thead>
-                                        <tr>
-                                            <th>رقم التتبع</th>
-                                            <th>اسم البيج / الراسل</th>
-                                            <th>المستلم / الهاتف</th>
-                                            <th>منطقة الزبون</th>
-                                            <th>الكابتن المكلف</th>
-                                            <th>مبلغ الطلب الكلي</th>
-                                            <th>مرحلة خط السير الحالية</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="shipments-table-body"></tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- تبويب 3: الرسوم البيانية ومجال التحليلات -->
-            <section id="analytics-section" class="view-section hidden">
-                <div class="section-container">
-                    <div class="view-header">
-                        <h2>مركز تحليلات البيانات والـ IoT المتقدم لشبكة العمليات</h2>
-                    </div>
-                    <div class="analytics-charts-grid">
-                        <div class="chart-card"><h3>📊 تدفق إيرادات مبيعات الكباتن اللحظي</h3><canvas id="salesChart"></canvas></div>
-                        <div class="chart-card"><h3>⛽ رادار مستويات وقود الأسطول (Telemetry)</h3><canvas id="fuelChart"></canvas></div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- تبويب 4: النظام المالي والمطابقة للـ ACID -->
-            <section id="accounts-section" class="view-section hidden">
-                <div class="section-container">
-                    <div class="view-header">
-                        <h2>المطابقة والتدقيق المالي المحاسبي للذمم والـ COD</h2>
-                    </div>
-                    <div class="financial-cards-grid">
-                        <div class="fin-card bg-gradient-blue"><span>إجمالي مبيعات كاش الطلبيات</span><h2 id="fin-total-sales">0 د.ع</h2></div>
-                        <div class="fin-card bg-gradient-orange"><span>نقد معلق عهود بالشارع</span><h2 id="fin-cash-with-drivers">0 د.ع</h2></div>
-                        <div class="fin-card bg-gradient-green"><span>أرباح توصيل السستم الصافية</span><h2 id="fin-delivery-profits">0 د.ع</h2></div>
-                    </div>
-                    <div class="panel-full-table">
-                        <h3>📊 كشف الحساب والذمة المالية اللحظية للكباتن والمندوبين</h3>
-                        <div class="table-responsive">
-                            <table class="custom-table">
-                                <thead>
-                                    <tr>
-                                        <th>اسم الكابتن والمندوب</th>
-                                        <th>الطرود المعينة</th>
-                                        <th>إجمالي كاش الـ COD بذمته</th>
-                                        <th>أجور التوصيل الصافية للشركة</th>
-                                        <th>حالة الحساب المالي</th>
-                                        <th>الإجراء</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="finance-table-body"></tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </section>
-        </div>
-    </div>
-
-    <!-- ================= شاشة مصغرة منبثقة لإضافة طلب مباشر فوري ================= -->
-    <div id="direct-order-modal" class="modal-wrapper hidden">
-        <div class="modal-card" style="width: 480px; border-color: var(--primary);">
-            <div class="modal-header">
-                <h3>⚡ إضافة طلب مباشر فوري للسستم</h3>
-                <button class="close-modal-btn" id="close-direct-modal-btn">×</button>
-            </div>
-            <div class="modal-body">
-                <form id="direct-order-form">
-                    <div class="form-group">
-                        <label class="cyber-label">الكابتن الموجه له الطلب</label>
-                        <select id="direct-assign-driver" class="cyber-input" required></select>
-                    </div>
-                    <div class="form-group">
-                        <label class="cyber-label">سعر الطلب الكلي (كاش COD)</label>
-                        <input type="number" id="direct-price" class="cyber-input" required placeholder="أدخل السعر بالدينار ع.ع">
-                    </div>
-                    <div class="form-group">
-                        <label class="cyber-label">اسم البيج (الراسل)</label>
-                        <input type="text" id="direct-page-name" class="cyber-input" required placeholder="مثال: بيج فاشن ستور">
-                    </div>
-                    <div class="form-group">
-                        <label class="cyber-label">منطقة وعنوان الزبون</label>
-                        <input type="text" id="direct-zone-name" class="cyber-input" required placeholder="مثال: الكرادة / قرب ساحة التحري">
-                    </div>
-                    <button type="submit" class="btn-cyber-primary w-100" style="margin-top: 15px;">تثبيت وتوجيه القيد الفوري</button>
-                </form>
             </div>
         </div>
+
     </div>
 
-    <!-- مودال المخالفات والتنبيهات العامة -->
-    <div id="alerts-modal" class="modal-wrapper hidden">
-        <div class="modal-card">
-            <div class="modal-header"><h3>⚠️ سجل الخروقات والتجاوزات الحية للـ IoT</h3><button class="close-modal-btn" id="close-alerts-btn">×</button></div>
-            <div class="modal-body" id="alerts-log-container"></div>
+    <!-- كونسول إشعار إبداع الطلاب المنبثق عند التخويل المباشر -->
+    <div id="cyber-welcome-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(3, 7, 18, 0.85); backdrop-filter: blur(8px); z-index: 99999; justify-content: center; align-items: center;">
+        <div style="background: rgba(17, 24, 39, 0.95); border: 2px solid #00f2fe; box-shadow: 0 0 35px rgba(0, 242, 254, 0.5); width: 90%; max-width: 450px; padding: 30px; border-radius: 16px; text-align: center; position: relative; font-family: 'Segoe UI', Tahoma, sans-serif; color: #fff;">
+            <div style="font-size: 40px; margin-bottom: 10px;">🛡️</div>
+            <h2 style="color: #00f2fe; margin: 0 0 10px 0; font-size: 20px; font-weight: 700;">جامعة آشور الدولية</h2>
+            <h3 style="color: #9ca3af; margin: 0 0 20px 0; font-size: 14px; font-weight: 500; border-bottom: 1px solid rgba(0,242,254,0.2); padding-bottom: 12px;">كلية الهندسة - قسم هندسة الأمن السيبراني</h3>
+            <p style="font-size: 15px; line-height: 1.6; color: #f3f4f6; margin-bottom: 20px; font-weight: 600;">🚀 هذا المشروع من إبداع وتنفيذ الطلاب المتميزين:</p>
+            <div style="background: rgba(0, 0, 0, 0.4); border-radius: 10px; padding: 15px; text-align: right; margin-bottom: 25px; border: 1px solid rgba(255,255,255,0.05);">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 4px;"><span>1. سجاد زين العابدين حامد</span> <span style="color: #00f2fe; font-weight: bold; font-family: monospace;">Group C</span></div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 4px;"><span>2. ذو الفقار اسعد حميد</span> <span style="color: #00f2fe; font-weight: bold; font-family: monospace;">Group C</span></div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 4px;"><span>3. علي رضا حسن حاج مراد</span> <span style="color: #00f2fe; font-weight: bold; font-family: monospace;">Group D</span></div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 4px;"><span>4. مصطفى علي حسين</span> <span style="color: #00f2fe; font-weight: bold; font-family: monospace;">Group F</span></div>
+                <div style="display: flex; justify-content: space-between;"><span>5. علي ليث علي</span> <span style="color: #00f2fe; font-weight: bold; font-family: monospace;">Group F</span></div>
+            </div>
+            <button onclick="closeCyberWelcomeModal()" style="background: #00f2fe; color: #030712; border: none; padding: 12px 30px; font-size: 14px; font-weight: 700; border-radius: 8px; cursor: pointer; width: 100%; box-shadow: 0 4px 15px rgba(0,242,254,0.4);">الدخول وتشغيل لوحة التحكم والمراقبة 🚀</button>
         </div>
     </div>
 
+    <!-- Leaflet JS Core & App Engine -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="app.js"></script>
 </body>

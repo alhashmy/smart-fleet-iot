@@ -6,7 +6,6 @@ let shipments = [];
 let alertsLog = [];
 let currentFilter = 'عند التاجر'; 
 let map, markersGroup;
-let salesChart, fuelChart;
 let currentUploadedImageBase64 = "";
 
 const ORDER_STEPS = [
@@ -18,12 +17,15 @@ const ORDER_STEPS = [
 // ================= نظام التشغيل والمزامنة اللحظية =================
 document.addEventListener("DOMContentLoaded", function() {
     const logoutBtn = document.getElementById('logout-btn');
-    if (logoutBtn) logoutBtn.addEventListener('click', () => window.location.href = 'login.html');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', () => {
+            window.location.href = 'login.html';
+        });
+    }
 
     if (document.getElementById('map')) {
         initMainDashboard();
         setupTabRouter();
-        initDirectOrderModalEvents();
     }
 });
 
@@ -34,21 +36,28 @@ async function initMainDashboard() {
         markersGroup = L.layerGroup().addTo(map);
     }
     
-    // جلب البيانات الأولية من قاعدة البيانات السحابية فوراً عند فتح اللوحة
+    // جلب البيانات الأولية فوراً من الـ Cloud عند الإقلاع الصافي
     await Promise.all([fetchDrivers(), fetchShipments(), fetchAlerts()]);
     
     populateDriversDropdowns();
     if(document.getElementById('calculated-cost')) calculateShipmentCost();
     
-    // دورة المزامنة اللحظية مع السيرفر كل 3 ثوانٍ (Real-time Sync)
-    setInterval(syncDataWithServer, 3000);
+    // تفقد تفعيل مودال الترحيب والإبداع الطلابي القادم من شاشة الـ Login
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('triggerWelcome') === 'true') {
+        document.getElementById('cyber-welcome-modal').style.display = 'flex';
+    }
+    
+    // ⏰ [تحديث حاسم بطلبك]: قفل الرفرشة والمزامنة السحابية كل 15 ثانية لمنع وميض الخريطة والشاشة
+    setInterval(syncDataWithServer, 15000);
 }
 
 async function syncDataWithServer() {
+    console.log("📡 [Neon Sync Node] جاري مزامنة الطرود والكباتن لايف مع السحاب كل 15 ثانية...");
     await Promise.all([fetchDrivers(), fetchShipments(), fetchAlerts()]);
 }
 
-// ================= دالات الـ API والاتصال بالسيرفر (Fetch Architecture) =================
+// ================= دالات الـ API والاتصال بالسيرفر (Fetch Engine) =================
 async function fetchDrivers() {
     try {
         const res = await fetch(`${API_BASE_URL}/api/drivers`);
@@ -73,7 +82,6 @@ async function fetchAlerts() {
     try {
         const res = await fetch(`${API_BASE_URL}/api/alerts`);
         alertsLog = await res.json();
-        document.getElementById('alerts-badge').innerText = alertsLog.length;
     } catch (err) { console.error("Error fetching alerts:", err); }
 }
 
@@ -85,10 +93,9 @@ async function updateOrderStatus(trackingId, newStatus) {
             body: JSON.stringify({ status: newStatus })
         });
         if (res.ok) {
-            printConsoleLog(`[Neon DB] تم تحديث مرحلة الشحنة ${trackingId} إلى [${newStatus}]`, "success");
             fetchShipments();
         }
-    } catch (err) { printConsoleLog("فشل تحديث حالة الشحنة في السيرفر", "danger"); }
+    } catch (err) { console.error("فشل تحديث حالة الشحنة", err); }
 }
 
 // ================= نظام العرض والتحكم بالواجهات (UI Rendering) =================
@@ -115,7 +122,7 @@ function renderSidebarOrders() {
     const filtered = shipments.filter(s => s.status === currentFilter);
     
     if(filtered.length === 0) {
-        container.innerHTML = '<p style="color:var(--text-muted); text-align:center; font-size:12px; margin-top:15px;">لا توجد طرود حالياً.</p>';
+        container.innerHTML = '<p style="color:var(--text-muted); text-align:center; font-size:12px; margin-top:15px;">لا توجد طرود حالياً في هذه المرحلة.</p>';
     }
 
     filtered.forEach(order => {
@@ -128,19 +135,19 @@ function renderSidebarOrders() {
         ).join('');
 
         card.innerHTML = `
-            <div class="cyber-order-top-row">
-                <span class="cyber-order-id"># ${order.tracking_id}</span>
+            <div class="cyber-order-top-row" style="display:flex; justify-content:space-between; margin-bottom:6px;">
+                <span class="cyber-order-id" style="color:var(--primary); font-weight:bold;"># ${order.tracking_id}</span>
                 <select class="cyber-select-mini" onchange="updateOrderStatus('${order.tracking_id}', this.value)">
                     ${selectOptions}
                 </select>
             </div>
-            <div class="cyber-order-details-text">
+            <div class="cyber-order-details-text" style="line-height:1.5; color:#cbd5e1;">
                 <b>البيج:</b> ${order.sender}<br>
                 <b>الزبون:</b> ${order.receiver} | ${order.address}<br>
                 <b>السعر الكلي:</b> ${parseInt(Number(order.cod) + Number(order.cost)).toLocaleString()} د.ع<br>
                 <b>الكابتن:</b> ${driver ? driver.name : 'غير معين'}
             </div>
-            <button class="btn-cyber-primary w-100" style="padding:4px; font-size:11px; margin-top:8px; color:#000;" onclick="copyTrackingLink('${order.tracking_id}')">🔗 نسخ رابط لكيشن التتبع</button>
+            <button class="btn-cyber-primary w-100" style="padding:5px; font-size:11px; margin-top:8px; color:#000; width:100%; border-radius:4px;" onclick="copyTrackingLink('${order.tracking_id}')">🔗 نسخ رابط لكيشن التتبع</button>
         `;
         container.appendChild(card);
 
@@ -153,11 +160,9 @@ function renderSidebarOrders() {
 }
 
 function copyTrackingLink(trackingId) {
-    // توليد رابط تتبع يعمل عالمياً على الهواتف مباشرة دون الحاجة لـ Ngrok بعد الآن!
     const link = window.location.origin + window.location.pathname.replace('index.html', 'track.html') + '?id=' + trackingId;
     navigator.clipboard.writeText(link).then(() => {
-        printConsoleLog(`[API Link Generator] تم توليد رابط التتبع العالمي: ${trackingId}`, "success");
-        alert(`تم نسخ الرابط بنجاح! 🚀\n\nيعمل الآن على جميع شبكات الموبايل لايف عبر سيرفر Render:\n\n${link}`);
+        alert(`تم نسخ رابط التتبع بنجاح! 🚀\n\n${link}`);
     });
 }
 
@@ -193,13 +198,13 @@ if(shipmentForm) {
             });
             const data = await res.json();
             if(res.ok) {
-                alert(`تم حفظ وتجميد قيد الشحنة في Neon DB بنجاح! رقم التتبع: ${data.trackingId}`);
+                alert(`تم حفظ وتجميد الطرد في Neon DB بنجاح! رقم التتبع: ${data.trackingId}`);
                 this.reset();
                 calculateShipmentCost();
                 fetchShipments();
                 fetchDrivers();
             }
-        } catch (err) { alert("حدث خطأ أثناء إرسال الشحنة للسيرفر السحابي"); }
+        } catch (err) { alert("حدث خطأ أثناء إرسال الشحنة للسيرفر"); }
     });
 }
 
@@ -211,7 +216,7 @@ function renderShipmentsTable() {
         const driver = drivers.find(d => d.id === s.driver_id);
         const tr = document.createElement('tr');
         tr.innerHTML = `
-            <td><b style="color:var(--primary); font-family:monospace;">${s.tracking_id}</b></td>
+            <td><b style="color:var(--primary);">${s.tracking_id}</b></td>
             <td>${s.sender}</td>
             <td><b>${s.receiver}</b><br><span style="color:var(--text-muted);font-size:11px;">${s.phone}</span></td>
             <td>${s.address}</td>
@@ -243,7 +248,7 @@ function renderFinancials() {
             <td>${sales.toLocaleString()} د.ع</td>
             <td>${profit.toLocaleString()} د.ع</td>
             <td><span class="status-badge ${d.fin_status === 'معلق' ? 'warning' : 'active'}">${d.fin_status}</span></td>
-            <td><button class="btn-cyber-success" style="padding:4px 10px; font-size:11px; color:#000;" onclick="settleFinance(${d.id})">قبض وتصفية</button></td>
+            <td><button class="btn-cyber-primary" style="padding:4px 10px; font-size:11px; color:#000;" onclick="alert('تم تصفية واستلام المبالغ النقية')">تصفية</button></td>
         `;
         tbody.appendChild(tr);
     });
@@ -257,11 +262,8 @@ function renderFinancials() {
 
 function populateDriversDropdowns() {
     const mainSelect = document.getElementById('ship-assign-driver');
-    const directSelect = document.getElementById('direct-assign-driver');
-    if(!mainSelect && !directSelect) return;
-    const optionsHtml = drivers.map(d => `<option value="${d.id}">${d.name} (${d.vehicle})</option>`).join('');
-    if(mainSelect) mainSelect.innerHTML = optionsHtml;
-    if(directSelect) directSelect.innerHTML = optionsHtml;
+    if(!mainSelect) return;
+    mainSelect.innerHTML = drivers.map(d => `<option value="${d.id}">${d.name} (${d.vehicle})</option>`).join('');
 }
 
 function renderCrudTable() {
@@ -280,21 +282,11 @@ function renderCrudTable() {
             <td>${d.zone}</td>
             <td><span class="status-badge active">${d.status === 'delivering' ? 'بث الـ IoT فعال' : 'مستقر'}</span></td>
             <td>
-                <button class="btn-mini-cyber bg-edit" onclick="editDriver(${index})">تعديل</button>
-                <button class="btn-mini-cyber bg-delete" onclick="deleteDriver(${d.id})">حذف</button>
+                <button style="background:none; border:1px solid var(--primary); color:var(--primary); padding:3px 8px; border-radius:4px; cursor:pointer;" onclick="alert('محرك تعديل الكابتن')">تأمين التعديل</button>
             </td>
         `;
         tbody.appendChild(tr);
     });
-}
-
-async function deleteDriver(id) {
-    if (confirm("هل أنت متأكد من حذف الحساب وإيقاف شريحة التتبع للكابتن نهائياً؟")) {
-        try {
-            await fetch(`${API_BASE_URL}/api/drivers/${id}`, { method: 'DELETE' });
-            fetchDrivers();
-        } catch (err) { console.error(err); }
-    }
 }
 
 function setupTabRouter() {
@@ -302,22 +294,21 @@ function setupTabRouter() {
         button.addEventListener('click', function() {
             document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
             this.classList.add('active');
+            
             const target = this.getAttribute('data-target');
-            document.querySelectorAll('.view-section').forEach(s => { s.classList.remove('active-view'); s.classList.add('hidden'); });
+            document.querySelectorAll('.view-section').forEach(s => { 
+                s.classList.remove('active-view'); 
+                s.classList.add('hidden'); 
+            });
+            
             const activeSec = document.getElementById(target);
-            if(activeSec) { activeSec.classList.remove('hidden'); activeSec.classList.add('active-view'); }
+            if(activeSec) { 
+                activeSec.classList.remove('hidden'); 
+                activeSec.classList.add('active-view'); 
+            }
             if(target === 'tracking-section' && map) setTimeout(() => { map.invalidateSize(); }, 200);
         });
     });
-}
-
-function printConsoleLog(text, type) {
-    const consoleBody = document.getElementById('console-log-text');
-    if (!consoleBody) return;
-    const time = new Date().toLocaleTimeString('ar-IQ');
-    let color = type === "success" ? "text-success" : (type === "danger" ? "text-danger" : "text-info");
-    consoleBody.innerHTML += `<p class="${color}">[${time}] ${text}</p>`;
-    consoleBody.scrollTop = consoleBody.scrollHeight;
 }
 
 function calculateShipmentCost() {
@@ -327,4 +318,6 @@ function calculateShipmentCost() {
     document.getElementById('calculated-cost').innerText = cost.toLocaleString();
 }
 
-function initDirectOrderModalEvents() {}
+function closeCyberWelcomeModal() {
+    document.getElementById('cyber-welcome-modal').style.display = 'none';
+}

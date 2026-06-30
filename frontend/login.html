@@ -3,47 +3,167 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>بوابة الوصول المشفرة | المسار الذكي Fleet IoT</title>
-    <link rel="stylesheet" href="style.css">
+    <title>بوابة التحكم السيبراني | تسجيل الدخول</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        :root {
+            --bg-base: #030712;
+            --primary: #00f2fe;
+            --primary-glow: rgba(0, 242, 254, 0.4);
+            --surface-glass: rgba(17, 24, 39, 0.7);
+            --border-cyber: rgba(0, 242, 254, 0.2);
+            --text-main: #f3f4f6;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            background: radial-gradient(circle at center, #0b1528 0%, var(--bg-base) 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        /* حاوية زجاجية احترافية */
+        .login-container {
+            background: var(--surface-glass);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--border-cyber);
+            border-radius: 16px;
+            padding: 40px;
+            width: 100%;
+            max-width: 380px;
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.5), 0 0 20px var(--primary-glow);
+            text-align: center;
+            position: relative;
+        }
+
+        .login-container::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 4px;
+            background: linear-gradient(90deg, transparent, var(--primary), transparent);
+            border-radius: 16px 16px 0 0;
+        }
+
+        .logo-area {
+            font-size: 28px;
+            font-weight: 800;
+            color: var(--text-main);
+            letter-spacing: 1px;
+            margin-bottom: 5px;
+            text-shadow: 0 0 10px var(--primary-glow);
+        }
+
+        .sub-title {
+            color: #9ca3af;
+            font-size: 13px;
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            text-align: right;
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            color: var(--primary);
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px 14px;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            color: #fff;
+            font-size: 14px;
+            outline: none;
+            box-sizing: border-box;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 10px rgba(0, 242, 254, 0.2);
+        }
+
+        .btn-login {
+            width: 100%;
+            padding: 12px;
+            background: var(--primary);
+            border: none;
+            border-radius: 8px;
+            color: #030712;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+            box-shadow: 0 4px 15px var(--primary-glow);
+        }
+
+        .btn-login:hover {
+            background: #00d2de;
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(0, 242, 254, 0.6);
+        }
+
+        .error-msg {
+            color: #ef4444;
+            font-size: 12px;
+            margin-top: 15px;
+            display: none;
+            font-weight: 600;
+        }
+    </style>
 </head>
-<body class="auth-page-body">
+<body>
 
-    <div class="neon-grid-bg"></div>
-
-    <div class="auth-wrapper">
-        <div class="auth-card tech-border">
-            <div class="auth-header-logo">
-                <div class="cyber-scan-line"></div>
-                <h2>المسار الذكي <span class="logo-sub">Fleet IoT PRO v3.0</span></h2>
-                <div class="badge-secure-glow">SECURE NODE // AES-256</div>
+    <div class="login-container">
+        <div class="logo-area">SMART ROUTE</div>
+        <div class="sub-title">نظام التتبع السيبراني وإدارة الأسطول الذكي</div>
+        
+        <form id="login-form">
+            <div class="form-group">
+                <label>اسم المستخدم (Admin Username)</label>
+                <input type="text" id="username" placeholder="ادخل اسم المستخدم..." required autocomplete="off">
             </div>
-            <p class="tech-text">أدخل مفتاح المرور الإداري لتفعيل بروتوكولات تتبع الحساسات، إدارة الشحنات الموزعة، والمطابقة المالية.</p>
-            
-            <form id="login-form">
-                <div class="form-group">
-                    <label class="cyber-label">مُعرف الحساب (ADMIN ID)</label>
-                    <input type="text" id="username" value="admin" required class="cyber-input">
-                </div>
-                <div class="form-group">
-                    <label class="cyber-label">مفتاح التشفير (PASSWORD)</label>
-                    <input type="password" id="password" value="admin123" required class="cyber-input">
-                </div>
-                <button type="submit" class="btn-cyber-primary">تخويل الدخول SYSTEM ENTER</button>
-            </form>
-            
-            <div class="auth-footer">
-                <span>التحكم بالوصول مستند للأدوار (RBAC) مفعل تلقائياً.</span>
+            <div class="form-group">
+                <label>كلمة المرور (Secure Password)</label>
+                <input type="password" id="password" placeholder="••••••••" required>
             </div>
-        </div>
+            
+            <button type="submit" class="btn-login">تخويل ودخول للنظام 🔐</button>
+            <div class="error-msg" id="error-box">❌ خطأ في بيانت الاعتماد! تفحص الاسم أو الباسورد.</div>
+        </form>
     </div>
 
     <script>
         document.getElementById('login-form').addEventListener('submit', function(e) {
             e.preventDefault();
-            if (document.getElementById('username').value === 'admin' && document.getElementById('password').value === 'admin123') {
-                window.location.href = 'index.html';
+            const user = document.getElementById('username').value.trim();
+            const pass = document.getElementById('password').value;
+            const errorBox = document.getElementById('error-box');
+
+            // الفحص بالأدمن والباسورد الموعود
+            if (user === 'ادمن' && pass === '123') {
+                errorBox.style.display = 'none';
+                // نوجه اللابتوب للوحة الرئيسية مع تمرير علم مخصص لفتح الإشعار المنبثق تلقائياً!
+                window.location.href = 'index.html?triggerWelcome=true';
             } else {
-                alert('خطأ في بروتوكول المصادقة! تفقد مفتاح المرور.');
+                errorBox.style.display = 'block';
             }
         });
     </script>
