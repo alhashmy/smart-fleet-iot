@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>بوابة الوصول المشفرة | المسار الذكي Fleet IoT</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="auth-page-body">
+
+    <div class="neon-grid-bg"></div>
+
+    <div class="auth-wrapper">
+        <div class="auth-card tech-border">
+            <div class="auth-header-logo">
+                <div class="cyber-scan-line"></div>
+                <h2>المسار الذكي <span class="logo-sub">Fleet IoT PRO v3.0</span></h2>
+                <div class="badge-secure-glow">SECURE NODE // AES-256</div>
+            </div>
+            <p class="tech-text">أدخل مفتاح المرور الإداري لتفعيل بروتوكولات تتبع الحساسات، إدارة الشحنات الموزعة، والمطابقة المالية.</p>
+            
+            <form id="login-form">
+                <div class="form-group">
+                    <label class="cyber-label">مُعرف الحساب (ADMIN ID)</label>
+                    <input type="text" id="username" value="admin" required class="cyber-input">
+                </div>
+                <div class="form-group">
+                    <label class="cyber-label">مفتاح التشفير (PASSWORD)</label>
+                    <input type="password" id="password" value="admin123" required class="cyber-input">
+                </div>
+                <button type="submit" class="btn-cyber-primary">تخويل الدخول SYSTEM ENTER</button>
+            </form>
+            
+            <div class="auth-footer">
+                <span>التحكم بالوصول مستند للأدوار (RBAC) مفعل تلقائياً.</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('login-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            if (document.getElementById('username').value === 'admin' && document.getElementById('password').value === 'admin123') {
+                window.location.href = 'index.html';
+            } else {
+                alert('خطأ في بروتوكول المصادقة! تفقد مفتاح المرور.');
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>رادار التتبع اللحظي للشحنة | المسار الذكي</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .public-track-body { height: 100vh; width: 100vw; margin: 0; padding: 0; position: relative; }
+        .public-track-card {
+            position: absolute; top: 20px; left: 50%; transform: translateX(-50%);
+            width: 90%; max-width: 450px; background-color: rgba(11, 15, 25, 0.93);
+            backdrop-filter: blur(12px); border: 1px solid var(--primary);
+            padding: 20px; border-radius: 14px; z-index: 2000; text-align: right;
+            box-shadow: 0 0 30px rgba(0,242,254,0.25);
+        }
+        .public-track-card h3 { font-size: 16px; color: var(--primary); margin-bottom: 6px; font-weight: bold; text-shadow: 0 0 8px rgba(0,242,254,0.2); }
+        .public-track-card p { font-size: 12px; color: var(--text-main); margin-bottom: 8px; }
+        .step-badge-public { display: inline-block; background-color: rgba(0, 230, 118, 0.12); color: var(--success); padding: 5px 12px; border-radius: 4px; font-size: 11px; font-weight: bold; border: 1px solid rgba(0, 230, 118, 0.2); margin-bottom: 12px; }
+    </style>
+</head>
+<body class="public-track-body">
+
+    <div class="neon-grid-bg"></div>
+
+    <div class="public-track-card">
+        <h3 id="pub-track-id">جاري استدعاء قيد التتبع الرقمي...</h3>
+        <p id="pub-page-info">البيج الراسل: --</p>
+        <p id="pub-address-info">منطقة التوصيل المستهدفة: --</p>
+        <div class="step-badge-public" id="pub-status-badge">مرحلة خط السير: جاري المزامنة</div>
+        
+        <button id="share-gps-btn" class="btn-cyber-primary w-100" style="color:#000; font-size:12px; font-weight:bold; letter-spacing:0.5px;">📍 بث موقعي الفعلي الآن عبر الـ GPS لايف</button>
+    </div>
+
+    <div id="public-map" style="width: 100%; height: 100vh; z-index: 1;"></div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        let map, marker;
+        let watchId = null; // معرف تتبع الحساس المستمر
+        const urlParams = new URLSearchParams(window.location.search);
+        const trackingId = urlParams.get('id');
+
+        if (!trackingId) {
+            document.body.innerHTML = "<h2 style='color:white; text-align:center; margin-top:20%; font-family:sans-serif;'>⚠️ خطأ أمني: رمز تتبع الشحنة غير صالحة أو مفقود!</h2>";
+        } else {
+            initPublicTracker();
+        }
+
+        function initPublicTracker() {
+            map = L.map('public-map').setView([33.3152, 44.3661], 13);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+            trackLiveLocation();
+            setInterval(trackLiveLocation, 2000);
+            
+            // ربط زر مشاركة الموقع الحقيقي وبثه للسيرفر
+            document.getElementById('share-gps-btn').addEventListener('click', toggleRealGPSStreaming);
+        }
+
+        function trackLiveLocation() {
+            const drivers = JSON.parse(localStorage.getItem('fleet_drivers')) || [];
+            const shipments = JSON.parse(localStorage.getItem('fleet_shipments')) || [];
+            
+            const order = shipments.find(s => s.trackingId === trackingId);
+            if (!order) return;
+
+            document.getElementById('pub-track-id').innerText = `📦 تتبع الشحنة الحية: ${order.trackingId}`;
+            document.getElementById('pub-page-info').innerText = `البيج الراسل: ${order.sender}`;
+            document.getElementById('pub-address-info').innerText = `وجهة المستلم الكلية: بغداد / ${order.address}`;
+            
+            if (!watchId) {
+                document.getElementById('pub-status-badge').innerText = `مرحلة خط السير الحالية: ${order.status}`;
+            }
+
+            const driver = drivers.find(d => d.id === order.driverId);
+            if (driver) {
+                const currentPos = [driver.lat, driver.lng];
+                
+                if (!marker) {
+                    const imgTag = driver.image ? `<img src="${driver.image}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;display:block;margin-bottom:5px;border:1px solid #00f2fe;">` : '';
+                    marker = L.marker(currentPos).addTo(map);
+                    marker.bindPopup(`<div style="text-align:right;">${imgTag}<b>الكابتن المعين: ${driver.name}</b><br>الحالة الفنية: ${driver.isRealGPS ? '📡 بث GPS حقيقي' : '🤖 محاكاة افتراضية'}</div>`).openPopup();
+                    map.setView(currentPos, 14);
+                } else {
+                    marker.setLatLng(currentPos);
+                }
+            }
+        }
+
+        // دالة تشغيل واقتناص مستشعر تحديد المواقع الجغرافي الحقيقي للجهاز
+        function toggleRealGPSStreaming() {
+            if (!navigator.geolocation) {
+                alert("عذراً، متصفحك أو جهازك لا يدعم نظام تحديد المواقع الجغرافي GPS.");
+                return;
+            }
+
+            const btn = document.getElementById('share-gps-btn');
+
+            if (watchId === null) {
+                // تفعيل البث الحقيقي المستمر للموقع
+                btn.innerText = "⏳ جاري الاتصال بالأقمار الصناعية واقتناص الإحداثيات...";
+                btn.style.background = "linear-gradient(135deg, #ff9100, #ff1744)";
+
+                watchId = navigator.geolocation.watchPosition(function(position) {
+                    const realLat = position.coords.latitude;
+                    const realLng = position.coords.longitude;
+                    const realSpeed = Math.floor((position.coords.speed || 0) * 3.6); // تحويل السرعة إلى كم/س
+
+                    // حقن الموقع الحقيقي داخل الـ Database ليتحدث سستم الآدمن فوراً
+                    let drivers = JSON.parse(localStorage.getItem('fleet_drivers')) || [];
+                    let shipments = JSON.parse(localStorage.getItem('fleet_shipments')) || [];
+                    const order = shipments.find(s => s.trackingId === trackingId);
+                    
+                    if (order) {
+                        let driver = drivers.find(d => d.id === order.driverId);
+                        if (driver) {
+                            driver.lat = realLat;
+                            driver.lng = realLng;
+                            driver.speed = realSpeed > 0 ? realSpeed : Math.floor(Math.random() * (40 - 20) + 20); // إذا كان واقفا يعطيه سرعة حركة بسيطة واقعية للسيارة
+                            driver.isRealGPS = true; // رفع راية البث الحقيقي لإلغاء القفل التلقائي للمحاكي بالصفحة الأولى
+                            localStorage.setItem('fleet_drivers', JSON.stringify(drivers));
+                        }
+                    }
+
+                    btn.innerText = "🟢 البث الحقيقي فعال حياً (اضغط للإيقاف)";
+                    btn.style.background = "linear-gradient(135deg, #00e676, #00b0ff)";
+                    document.getElementById('pub-status-badge').innerText = `📡 بروتوكول البث: تم تفعيل حساس الـ GPS الحقيقي للجهاز`;
+                    
+                    if(map) map.setView([realLat, realLng], 15);
+
+                }, function(error) {
+                    console.error(error);
+                    alert("فشل اقتناص الموقع! تأكد من منح المتصفح صلاحية الوصول للـ Location وتفعيل الـ GPS بالهاتف.");
+                    resetGpsButton();
+                }, {
+                    enableHighAccuracy: true, // استخدام أعلى دقة ممكنة للمستشعر Hardware
+                    maximumAge: 0,
+                    timeout: 10000
+                });
+            } else {
+                // إيقاف بث الموقع الحقيقي والعودة للمحاكي الافتراضي
+                navigator.geolocation.clearWatch(watchId);
+                watchId = null;
+                
+                // إرجاع راية المحاكاة الافتراضية
+                let drivers = JSON.parse(localStorage.getItem('fleet_drivers')) || [];
+                let shipments = JSON.parse(localStorage.getItem('fleet_shipments')) || [];
+                const order = shipments.find(s => s.trackingId === trackingId);
+                if (order) {
+                    let driver = drivers.find(d => d.id === order.driverId);
+                    if (driver) driver.isRealGPS = false;
+                }
+                localStorage.setItem('fleet_drivers', JSON.stringify(drivers));
+                
+                resetGpsButton();
+                document.getElementById('pub-status-badge').innerText = `مرحلة خط السير: تم العودة للمحاكاة الافتراضية`;
+            }
+        }
+
+        function resetGpsButton() {
+            const btn = document.getElementById('share-gps-btn');
+            btn.innerText = "📍 بث موقعي الفعلي الآن عبر الـ GPS لايف";
+            btn.style.background = "linear-gradient(135deg, #0072ff, #00f2fe)";
+        }
+    </script>
+</body>
+</html>

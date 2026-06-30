@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة التحكم التنفيذية | نظام المسار الذكي المتكامل</title>
+    
+    <!-- مكتبات العرض الخارجي -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="neon-grid-bg"></div>
+
+    <div id="app-view" class="main-app-container">
+        
+        <!-- الشريط العلوي التكنولوجي الاحترافي -->
+        <header class="top-navbar">
+            <div class="logo-section">
+                <div class="cyber-pulse-node"></div>
+                <span class="logo-text">المسار الذكي <span class="logo-sub">MAIN NODE v3.5</span></span>
+            </div>
+            <nav class="nav-links">
+                <button class="nav-item active" data-target="tracking-section">🛰️ التتبع والـ IoT اللحظي</button>
+                <button class="nav-item" data-target="shipments-section">📦 مستودع الشحنات الذكي</button>
+                <button class="nav-item" data-target="analytics-section">📊 مجسات البيانات والرسوم</button>
+                <button class="nav-item" data-target="accounts-section">💰 التصفية المالية والـ ACID</button>
+                <a href="drivers.html" class="nav-link-btn">👥 بوابة الكباتن (CRUD) ↗</a>
+            </nav>
+            <div class="user-profile">
+                <button class="alerts-btn-cyber animate-pulse" id="alerts-toggle-btn">المخالفات الحية <span id="alerts-badge">0</span></button>
+                <div class="profile-info">
+                    <span class="user-name">المهندس عبد القادر صباح</span>
+                    <span class="user-role">OPERATIONS COMMANDER</span>
+                </div>
+                <button id="logout-btn" class="btn-cyber-logout">خروج</button>
+            </div>
+        </header>
+
+        <!-- محتوى السستم المتشعب التفاعلي -->
+        <div class="app-content-body">
+            
+            <!-- تبويب 1: التتبع اللحظي والخرائط والعمليات الفورية -->
+            <section id="tracking-section" class="view-section active-view">
+                <div class="tracking-layout">
+                    <aside class="sidebar">
+                        
+                        <!-- الخانة الجديدة المضافة أعلى تبويب حالة الأسطول لإنشاء طلب مباشر مصغر -->
+                        <button class="btn-cyber-primary w-100" id="open-direct-order-btn" style="margin-bottom: 5px; font-size: 13px; letter-spacing: 0.5px;">⚡ إنشاء طلب مباشر فوري</button>
+                        
+                        <h4>حالة حركة الأسطول والطلبات</h4>
+                        <div class="status-list scrollable-status-list">
+                            <div class="status-card-cyber b-orange" onclick="filterFleet(this, 'عند التاجر')">
+                                <span class="status-title">عند التاجر</span><span class="status-count" id="count-merchant">0</span>
+                            </div>
+                            <div class="status-card-cyber b-orange" onclick="filterFleet(this, 'في الطريق للتاجر')">
+                                <span class="status-title">في الطريق للتاجر</span><span class="status-count" id="count-to-merchant">0</span>
+                            </div>
+                            <div class="status-card-cyber b-blue" onclick="filterFleet(this, 'تم الاستلام وفي الطريق للمخزن')">
+                                <span class="status-title">تم الاستلام وفي الطريق للمخزن</span><span class="status-count" id="count-to-warehouse">0</span>
+                            </div>
+                            <div class="status-card-cyber b-blue" onclick="filterFleet(this, 'في المخزن وقيد الفرز')">
+                                <span class="status-title">في المخزن وقيد الفرز</span><span class="status-count" id="count-sorting">0</span>
+                            </div>
+                            <div class="status-card-cyber b-blue" onclick="filterFleet(this, 'تم استلام من قبل مندوب المحافظة')">
+                                <span class="status-title">استلام مندوب المحافظة</span><span class="status-count" id="count-province-driver">0</span>
+                            </div>
+                            <div class="status-card-cyber b-blue" onclick="filterFleet(this, 'في مكتب المحافظة')">
+                                <span class="status-title">في مكتب المحافظة</span><span class="status-count" id="count-province-office">0</span>
+                            </div>
+                            <div class="status-card-cyber b-blue active" onclick="filterFleet(this, 'في الطريق للزبون')">
+                                <span class="status-title">في الطريق للزبون</span><span class="status-count" id="count-to-customer">0</span>
+                            </div>
+                            <div class="status-card-cyber b-green" onclick="filterFleet(this, 'مكتمل')">
+                                <span class="status-title">مكتمل</span><span class="status-count" id="count-completed">0</span>
+                            </div>
+                        </div>
+
+                        <!-- قائمة عرض الطلبات الحالية المفلترة مع سستم منسدلة التقديم اللحظي للمراحل -->
+                        <div class="quick-drivers-list">
+                            <h4 id="dynamic-list-title">الطلبات المسجلة في هذا النطاق:</h4>
+                            <div id="dynamic-orders-container" class="dynamic-orders-scroll"></div>
+                        </div>
+                    </aside>
+                    
+                    <div class="map-wrapper">
+                        <main id="map" class="map-container"></main>
+                        
+                        <!-- لوحة قراءات الحساسات المنبثقة -->
+                        <div id="iot-details-panel" class="iot-panel-cyber hidden">
+                            <button class="close-panel-btn" onclick="closeIotPanel()">×</button>
+                            <div class="panel-header-profile">
+                                <img id="panel-driver-img" src="https://via.placeholder.com/60" class="panel-avatar">
+                                <div>
+                                    <h4 id="panel-driver-name">كابتن</h4>
+                                    <p id="panel-vehicle-info">مركبة</p>
+                                </div>
+                            </div>
+                            <div class="iot-grid">
+                                <div class="iot-box">⚡ السرعة: <span id="panel-speed">0</span> كم/س</div>
+                                <div class="iot-box">⛽ الوقود: <span id="panel-fuel">0</span>%</div>
+                                <div class="iot-box">📍 خط العرض: <span id="panel-lat">0</span></div>
+                                <div class="iot-box">📍 خط الطول: <span id="panel-lng">0</span></div>
+                            </div>
+                            <div class="panel-status-tag" id="panel-status">مستقر</div>
+                        </div>
+                        <div class="live-console-log">
+                            <div class="console-header">📟 TELEMETRY ENGINE LOGS // بث الحساسات المستمر لوحدات التحقق وقاعدة البيانات</div>
+                            <div class="console-body" id="console-log-text"></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- تبويب 2: مستودع الشحنات والطرود المتشعبة -->
+            <section id="shipments-section" class="view-section hidden">
+                <div class="section-container">
+                    <div class="view-header">
+                        <h2>نظام جدولة وإنشاء الشحنات والطرود المتشعبة</h2>
+                        <p>توليد قيود الشحنات، تتبع خط سير الطرد، احتساب كلفة التوصيل، وتعيين الكابتن المسؤول.</p>
+                    </div>
+                    <div class="management-grid">
+                        <div class="panel-form-card">
+                            <h3>📦 إنشاء وتوليد شحنة جديدة</h3>
+                            <form id="shipment-creation-form">
+                                <div class="form-group">
+                                    <label>اسم الراسل / التاجر (البيج)</label>
+                                    <input type="text" id="ship-sender" required class="cyber-input" placeholder="مثال: بيج النوارس للأزياء">
+                                </div>
+                                <div class="form-group">
+                                    <label>اسم المستلم النهائي</label>
+                                    <input type="text" id="ship-receiver" required class="cyber-input" placeholder="مثال: أحمد جاسم العلي">
+                                </div>
+                                <div class="form-group">
+                                    <label>رقم هاتف المستلم</label>
+                                    <input type="tel" id="ship-phone" required class="cyber-input" placeholder="077xxxxxxxx">
+                                </div>
+                                <div class="form-grid-3">
+                                    <div class="form-group">
+                                        <label>منطقة الزبون (بغداد)</label>
+                                        <input type="text" id="ship-address" required class="cyber-input" placeholder="مثال: المنصور">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>وزن الطرد</label>
+                                        <input type="number" id="ship-weight" value="1" required class="cyber-input">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>نوع الشحن</label>
+                                        <select id="ship-type" class="cyber-input" onchange="calculateShipmentCost()">
+                                            <option value="standard">شحن اعتيادي (5,000 د.ع)</option>
+                                            <option value="express">شحن سريع (8,000 د.ع)</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label>مبلغ الطلب الصافي كاش الكلي (COD)</label>
+                                    <input type="number" id="ship-cod" required class="cyber-input" placeholder="سعر الطلب بالكامل بالدينار">
+                                </div>
+                                <div class="form-group">
+                                    <label>تعيين الكابتن المسؤول عن التوصيل</label>
+                                    <select id="ship-assign-driver" class="cyber-input" required></select>
+                                </div>
+                                <div class="cost-summary-box">
+                                    💰 إجمالي كلفة الشحن والخدمة: <span id="calculated-cost">5,000</span> د.ع
+                                </div>
+                                <button type="submit" class="btn-cyber-success w-100">تثبيت القيد وتوليد الباركود</button>
+                            </form>
+                        </div>
+                        <div class="panel-table-card">
+                            <h3>📋 مستودع قيود الطرود الفعالة في السستم</h3>
+                            <div class="table-responsive">
+                                <table class="custom-table">
+                                    <thead>
+                                        <tr>
+                                            <th>رقم التتبع</th>
+                                            <th>اسم البيج / الراسل</th>
+                                            <th>المستلم / الهاتف</th>
+                                            <th>منطقة الزبون</th>
+                                            <th>الكابتن المكلف</th>
+                                            <th>مبلغ الطلب الكلي</th>
+                                            <th>مرحلة خط السير الحالية</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="shipments-table-body"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- تبويب 3: الرسوم البيانية ومجال التحليلات -->
+            <section id="analytics-section" class="view-section hidden">
+                <div class="section-container">
+                    <div class="view-header">
+                        <h2>مركز تحليلات البيانات والـ IoT المتقدم لشبكة العمليات</h2>
+                    </div>
+                    <div class="analytics-charts-grid">
+                        <div class="chart-card"><h3>📊 تدفق إيرادات مبيعات الكباتن اللحظي</h3><canvas id="salesChart"></canvas></div>
+                        <div class="chart-card"><h3>⛽ رادار مستويات وقود الأسطول (Telemetry)</h3><canvas id="fuelChart"></canvas></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- تبويب 4: النظام المالي والمطابقة للـ ACID -->
+            <section id="accounts-section" class="view-section hidden">
+                <div class="section-container">
+                    <div class="view-header">
+                        <h2>المطابقة والتدقيق المالي المحاسبي للذمم والـ COD</h2>
+                    </div>
+                    <div class="financial-cards-grid">
+                        <div class="fin-card bg-gradient-blue"><span>إجمالي مبيعات كاش الطلبيات</span><h2 id="fin-total-sales">0 د.ع</h2></div>
+                        <div class="fin-card bg-gradient-orange"><span>نقد معلق عهود بالشارع</span><h2 id="fin-cash-with-drivers">0 د.ع</h2></div>
+                        <div class="fin-card bg-gradient-green"><span>أرباح توصيل السستم الصافية</span><h2 id="fin-delivery-profits">0 د.ع</h2></div>
+                    </div>
+                    <div class="panel-full-table">
+                        <h3>📊 كشف الحساب والذمة المالية اللحظية للكباتن والمندوبين</h3>
+                        <div class="table-responsive">
+                            <table class="custom-table">
+                                <thead>
+                                    <tr>
+                                        <th>اسم الكابتن والمندوب</th>
+                                        <th>الطرود المعينة</th>
+                                        <th>إجمالي كاش الـ COD بذمته</th>
+                                        <th>أجور التوصيل الصافية للشركة</th>
+                                        <th>حالة الحساب المالي</th>
+                                        <th>الإجراء</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="finance-table-body"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <!-- ================= شاشة مصغرة منبثقة لإضافة طلب مباشر فوري ================= -->
+    <div id="direct-order-modal" class="modal-wrapper hidden">
+        <div class="modal-card" style="width: 480px; border-color: var(--primary);">
+            <div class="modal-header">
+                <h3>⚡ إضافة طلب مباشر فوري للسستم</h3>
+                <button class="close-modal-btn" id="close-direct-modal-btn">×</button>
+            </div>
+            <div class="modal-body">
+                <form id="direct-order-form">
+                    <div class="form-group">
+                        <label class="cyber-label">الكابتن الموجه له الطلب</label>
+                        <select id="direct-assign-driver" class="cyber-input" required></select>
+                    </div>
+                    <div class="form-group">
+                        <label class="cyber-label">سعر الطلب الكلي (كاش COD)</label>
+                        <input type="number" id="direct-price" class="cyber-input" required placeholder="أدخل السعر بالدينار ع.ع">
+                    </div>
+                    <div class="form-group">
+                        <label class="cyber-label">اسم البيج (الراسل)</label>
+                        <input type="text" id="direct-page-name" class="cyber-input" required placeholder="مثال: بيج فاشن ستور">
+                    </div>
+                    <div class="form-group">
+                        <label class="cyber-label">منطقة وعنوان الزبون</label>
+                        <input type="text" id="direct-zone-name" class="cyber-input" required placeholder="مثال: الكرادة / قرب ساحة التحري">
+                    </div>
+                    <button type="submit" class="btn-cyber-primary w-100" style="margin-top: 15px;">تثبيت وتوجيه القيد الفوري</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- مودال المخالفات والتنبيهات العامة -->
+    <div id="alerts-modal" class="modal-wrapper hidden">
+        <div class="modal-card">
+            <div class="modal-header"><h3>⚠️ سجل الخروقات والتجاوزات الحية للـ IoT</h3><button class="close-modal-btn" id="close-alerts-btn">×</button></div>
+            <div class="modal-body" id="alerts-log-container"></div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
