@@ -6,7 +6,6 @@ let shipments = [];
 let alertsLog = [];
 let currentFilter = 'عند التاجر'; 
 let map, markersGroup;
-let currentUploadedImageBase64 = "";
 
 const ORDER_STEPS = [
     "عند التاجر", "في الطريق للتاجر", "تم الاستلام وفي الطريق للمخزن",
@@ -36,7 +35,7 @@ async function initMainDashboard() {
         markersGroup = L.layerGroup().addTo(map);
     }
     
-    // جلب البيانات الأولية فوراً من الـ Cloud عند الإقلاع الصافي
+    // جلب البيانات الأولية فوراً من السحاب عند الإقلاع
     await Promise.all([fetchDrivers(), fetchShipments(), fetchAlerts()]);
     
     populateDriversDropdowns();
@@ -48,16 +47,16 @@ async function initMainDashboard() {
         document.getElementById('cyber-welcome-modal').style.display = 'flex';
     }
     
-    // ⏰ [تحديث حاسم بطلبك]: قفل الرفرشة والمزامنة السحابية كل 15 ثانية لمنع وميض الخريطة والشاشة
+    // ⏰ تحديث المزامنة السحابية كل 15 ثانية كاملة لمنع الوميض وتخفيف العبء
     setInterval(syncDataWithServer, 15000);
 }
 
 async function syncDataWithServer() {
-    console.log("📡 [Neon Sync Node] جاري مزامنة الطرود والكباتن لايف مع السحاب كل 15 ثانية...");
+    console.log("📡 [Neon DB Sync Node] تم تحديث ومزامنة البيانات لايف تلقائياً (دورة الـ 15 ثانية)...");
     await Promise.all([fetchDrivers(), fetchShipments(), fetchAlerts()]);
 }
 
-// ================= دالات الـ API والاتصال بالسيرفر (Fetch Engine) =================
+// ================= دالات الـ API والاتصال بالسيرفر =================
 async function fetchDrivers() {
     try {
         const res = await fetch(`${API_BASE_URL}/api/drivers`);
@@ -147,7 +146,7 @@ function renderSidebarOrders() {
                 <b>السعر الكلي:</b> ${parseInt(Number(order.cod) + Number(order.cost)).toLocaleString()} د.ع<br>
                 <b>الكابتن:</b> ${driver ? driver.name : 'غير معين'}
             </div>
-            <button class="btn-cyber-primary w-100" style="padding:5px; font-size:11px; margin-top:8px; color:#000; width:100%; border-radius:4px;" onclick="copyTrackingLink('${order.tracking_id}')">🔗 نسخ رابط لكيشن التتبع</button>
+            <button class="btn-cyber-primary" style="padding:5px; font-size:11px; margin-top:8px; color:#000; width:100%; border-radius:4px;" onclick="copyTrackingLink('${order.tracking_id}')">🔗 نسخ رابط لكيشن التتبع</button>
         `;
         container.appendChild(card);
 
@@ -173,7 +172,7 @@ function filterFleet(element, statusType) {
     renderSidebarOrders();
 }
 
-// ================= معالجة النماذج والإدخال (Forms Insertion) =================
+// ================= معالجة النماذج والإدخال =================
 const shipmentForm = document.getElementById('shipment-creation-form');
 if(shipmentForm) {
     shipmentForm.addEventListener('submit', async function(e) {
@@ -248,7 +247,7 @@ function renderFinancials() {
             <td>${sales.toLocaleString()} د.ع</td>
             <td>${profit.toLocaleString()} د.ع</td>
             <td><span class="status-badge ${d.fin_status === 'معلق' ? 'warning' : 'active'}">${d.fin_status}</span></td>
-            <td><button class="btn-cyber-primary" style="padding:4px 10px; font-size:11px; color:#000;" onclick="alert('تم تصفية واستلام المبالغ النقية')">تصفية</button></td>
+            <td><button class="btn-cyber-primary" style="padding:4px 10px; font-size:11px; color:#000;" onclick="alert('تمت التسوية بنجاح')">تصفية</button></td>
         `;
         tbody.appendChild(tr);
     });
@@ -282,7 +281,7 @@ function renderCrudTable() {
             <td>${d.zone}</td>
             <td><span class="status-badge active">${d.status === 'delivering' ? 'بث الـ IoT فعال' : 'مستقر'}</span></td>
             <td>
-                <button style="background:none; border:1px solid var(--primary); color:var(--primary); padding:3px 8px; border-radius:4px; cursor:pointer;" onclick="alert('محرك تعديل الكابتن')">تأمين التعديل</button>
+                <button style="background:none; border:1px solid var(--primary); color:var(--primary); padding:3px 8px; border-radius:4px; cursor:pointer;" onclick="alert('تأمين السائق فعال')">تأمين</button>
             </td>
         `;
         tbody.appendChild(tr);
@@ -309,6 +308,23 @@ function setupTabRouter() {
             if(target === 'tracking-section' && map) setTimeout(() => { map.invalidateSize(); }, 200);
         });
     });
+}
+
+// 💎 محرك توجيه الأقسام الفرعية ثلاثية الأبعاد بداخل شاشة حول 💎
+function switchAboutTab(btnElement, targetCardId) {
+    // 1. إلغاء تفعيل الأزرار السابقة وتوهجها
+    document.querySelectorAll('.sub-tab-btn').forEach(b => b.classList.remove('active-sub'));
+    btnElement.classList.add('active-sub');
+
+    // 2. إخفاء الكروت السابقة بحركة تدرج عكسية ثم إظهار الكارت الجديد بالفليب الـ 3D
+    document.querySelectorAll('.about-content-card').forEach(card => {
+        card.classList.remove('visible-card');
+    });
+
+    const activeCard = document.getElementById(targetCardId);
+    if(activeCard) {
+        activeCard.classList.add('visible-card');
+    }
 }
 
 function calculateShipmentCost() {
