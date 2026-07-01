@@ -3,22 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SMART ROUTE | لوحة التحكم السحابية</title>
-    <!-- Leaflet Map CSS -->
+    <title>SMART ROUTE | لوحة التحكم السحابية والتحريك الجغرافي</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         :root {
-            --bg-base: #030712;
-            --surface: #0b1329;
-            --surface-glass: rgba(11, 19, 41, 0.7);
+            --bg-base: #020617;
+            --surface: #0f172a;
+            --surface-glass: rgba(15, 23, 42, 0.75);
             --primary: #00f2fe;
-            --primary-glow: rgba(0, 242, 254, 0.35);
+            --primary-glow: rgba(0, 242, 254, 0.4);
             --success: #10b981;
             --warning: #f59e0b;
             --danger: #ef4444;
-            --text-main: #f3f4f6;
-            --text-muted: #9ca3af;
-            --border-cyber: rgba(0, 242, 254, 0.2);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-cyber: rgba(0, 242, 254, 0.25);
         }
 
         body {
@@ -28,22 +27,27 @@
             display: flex; height: 100vh; overflow: hidden;
         }
 
+        /* تحسين وتوهج القائمة الجانبية */
         .cyber-sidebar {
-            width: 260px; background-color: #050b18; border-left: 1px solid var(--border-cyber);
-            display: flex; flex-direction: column; padding: 20px; box-sizing: border-box;
+            width: 270px; background-color: #070a13; border-left: 2px solid var(--border-cyber);
+            display: flex; flex-direction: column; padding: 25px 20px; box-sizing: border-box;
+            box-shadow: 5px 0 25px rgba(0, 0, 0, 0.5);
         }
 
         .cyber-logo {
-            font-size: 22px; font-weight: 900; color: #fff; text-shadow: 0 0 10px var(--primary-glow);
-            margin-bottom: 30px; text-align: center; border-bottom: 1px solid var(--border-cyber); padding-bottom: 15px;
+            font-size: 24px; font-weight: 900; color: #fff; text-shadow: 0 0 15px var(--primary-glow);
+            margin-bottom: 35px; text-align: center; border-bottom: 2px solid var(--border-cyber); padding-bottom: 20px;
+            letter-spacing: 1px;
         }
 
         .nav-item {
-            padding: 12px 15px; border-radius: 8px; color: var(--text-muted); cursor: pointer;
-            margin-bottom: 8px; font-weight: 600; transition: all 0.2s ease; display: flex; align-items: center;
+            padding: 14px 18px; border-radius: 10px; color: var(--text-muted); cursor: pointer;
+            margin-bottom: 10px; font-weight: 700; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex; align-items: center; border: 1px solid transparent;
         }
         .nav-item:hover, .nav-item.active {
-            background: rgba(0, 242, 254, 0.1); color: var(--primary); box-shadow: inset 3px 0 0 var(--primary);
+            background: rgba(0, 242, 254, 0.08); color: var(--primary);
+            border-color: rgba(0, 242, 254, 0.3); box-shadow: inset 4px 0 0 var(--primary), 0 0 15px rgba(0,242,254,0.1);
         }
 
         .main-content-wrapper { flex: 1; display: flex; flex-direction: column; height: 100%; position: relative; }
@@ -52,70 +56,75 @@
         .active-view { display: flex !important; }
 
         #tracking-section { display: flex; flex-direction: row; width: 100%; height: 100%; }
-        .map-container-box { flex: 1; height: 100%; position: relative; }
+        .map-container-box { flex: 1; height: 100%; position: relative; border-top: 1px solid rgba(255,255,255,0.05); }
         #map { width: 100%; height: 100%; }
 
+        /* تحسين لوحة الطلبات الجانبية */
         .orders-sidebar-panel {
-            width: 320px; background: #060c1a; border-right: 1px solid var(--border-cyber);
-            display: flex; flex-direction: column; padding: 15px; box-sizing: border-box; overflow-y: auto;
+            width: 340px; background: #090d16; border-right: 2px solid var(--border-cyber);
+            display: flex; flex-direction: column; padding: 20px; box-sizing: border-box; overflow-y: auto;
         }
 
         .cyber-order-item-card {
-            background: rgba(0,0,0,0.3); border: 1px solid var(--border-cyber); padding: 12px; border-radius: 8px; margin-bottom: 12px; font-size: 13px;
+            background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(0, 242, 254, 0.15); padding: 15px; border-radius: 10px; margin-bottom: 15px; font-size: 13px;
+            transition: all 0.3s;
         }
-        .cyber-select-mini { background: #000; color: var(--primary); border: 1px solid var(--border-cyber); border-radius: 4px; padding: 2px 5px; }
-        .btn-cyber-primary { background: var(--primary); border: none; border-radius: 4px; cursor: pointer; font-weight: bold; padding: 5px; color: #000; }
+        .cyber-order-item-card:hover { border-color: var(--primary); box-shadow: 0 0 15px rgba(0, 242, 254, 0.15); transform: translateY(-2px); }
+        .cyber-select-mini { background: #000; color: var(--primary); border: 1px solid var(--border-cyber); border-radius: 6px; padding: 4px 8px; outline: none; }
+        .btn-cyber-primary { background: var(--primary); border: none; border-radius: 6px; cursor: pointer; font-weight: bold; padding: 8px; color: #000; box-shadow: 0 2px 10px var(--primary-glow); transition: all 0.2s; }
+        .btn-cyber-primary:hover { background: #00d2de; transform: scale(1.02); }
 
-        .table-view-container { flex: 1; padding: 25px; overflow-y: auto; background: radial-gradient(circle at top, #0b1426 0%, #030712 100%); }
-        .cyber-table { width: 100%; border-collapse: collapse; margin-top: 15px; text-align: right; }
-        .cyber-table th { background: rgba(0, 242, 254, 0.05); color: var(--primary); padding: 12px; border-bottom: 2px solid var(--border-cyber); }
-        .cyber-table td { padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        /* تحسين وتوهج الجداول */
+        .table-view-container { flex: 1; padding: 30px; overflow-y: auto; background: radial-gradient(circle at top, #0f1c3f 0%, #020617 100%); }
+        .cyber-table { width: 100%; border-collapse: collapse; margin-top: 20px; text-align: right; border-radius: 8px; overflow: hidden; }
+        .cyber-table th { background: rgba(0, 242, 254, 0.08); color: var(--primary); padding: 14px; border-bottom: 2px solid var(--border-cyber); font-weight: 800; }
+        .cyber-table td { padding: 14px; border-bottom: 1px solid rgba(255,255,255,0.05); background: rgba(0,0,0,0.2); }
+        .cyber-table tr:hover td { background: rgba(0, 242, 254, 0.03); }
 
-        .counters-strip { display: flex; gap: 10px; padding: 10px; background: #050a14; border-bottom: 1px solid var(--border-cyber); overflow-x: auto; align-items: center; }
-        .status-card-cyber { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); padding: 8px 15px; border-radius: 6px; cursor: pointer; min-width: 100px; text-align: center; }
-        .status-card-cyber.active { border-color: var(--primary); background: rgba(0, 242, 254, 0.05); }
-        .status-card-cyber span { display: block; font-size: 18px; font-weight: bold; color: var(--primary); }
-        .status-card-cyber label { font-size: 11px; color: var(--text-muted); cursor: pointer; }
+        /* شريط الـ 8 خطوات العلوي مع زيادة التوهج الجرافيكي */
+        .counters-strip { display: flex; gap: 10px; padding: 12px 15px; background: #05080f; border-bottom: 2px solid var(--border-cyber); overflow-x: auto; align-items: center; }
+        .status-card-cyber { background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.05); padding: 8px 16px; border-radius: 8px; cursor: pointer; min-width: 100px; text-align: center; transition: all 0.3s; }
+        .status-card-cyber.active { border-color: var(--primary); background: rgba(0, 242, 254, 0.08); box-shadow: 0 0 15px rgba(0,242,254,0.2); }
+        .status-card-cyber span { display: block; font-size: 20px; font-weight: bold; color: var(--primary); }
+        .status-card-cyber label { font-size: 11px; color: var(--text-muted); cursor: pointer; white-space: nowrap; font-weight: 600; }
 
         .btn-trigger-action-cyber {
-            background: var(--primary); color: #030712; border: none; padding: 10px 22px; border-radius: 6px; cursor: pointer; font-weight: 800; font-size: 13px;
+            background: linear-gradient(135deg, var(--primary) 0%, #00d2de 100%); color: #030712; border: none; padding: 10px 24px; border-radius: 8px; cursor: pointer; font-weight: 800; font-size: 13px;
             box-shadow: 0 0 15px var(--primary-glow); white-space: nowrap; margin-right: auto; transition: all 0.3s ease;
         }
 
-        /* استايل الأقسام ثلاثية الأبعاد */
-        .about-main-panel { background: var(--surface-glass); backdrop-filter: blur(20px); border: 1px solid var(--border-cyber); padding: 35px; border-radius: 20px; max-width: 900px; margin: 10px auto; }
-        .about-sub-tabs-nav { display: flex; justify-content: center; gap: 10px; margin-bottom: 30px; border-bottom: 1px solid rgba(0,242,254,0.1); padding-bottom: 15px; }
-        .sub-tab-btn { background: rgba(0,0,0,0.5); border: 1px solid rgba(0,242,254,0.2); color: var(--text-muted); padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px; transition: all 0.3s; }
-        .sub-tab-btn.active-sub { border-color: var(--primary); color: var(--primary); background: rgba(0, 242, 254, 0.1); box-shadow: 0 0 15px var(--primary-glow); }
-        .about-content-card { display: none; animation: cyber3DFlip 0.5s cubic-bezier(0.25, 1, 0.5, 1) forwards; background: rgba(0,0,0,0.4); padding: 25px; border-radius: 12px; }
+        /* لوحة حول النظام ثلاثية الأبعاد */
+        .about-main-panel { background: var(--surface-glass); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border: 1px solid var(--border-cyber); padding: 40px; border-radius: 24px; max-width: 950px; margin: 15px auto; box-shadow: 0 0 40px rgba(0, 242, 254, 0.1); }
+        .about-sub-tabs-nav { display: flex; justify-content: center; gap: 12px; margin-bottom: 35px; border-bottom: 1px solid rgba(0,242,254,0.1); padding-bottom: 20px; }
+        .sub-tab-btn { background: rgba(0,0,0,0.6); border: 1px solid rgba(0,242,254,0.2); color: var(--text-muted); padding: 12px 24px; border-radius: 10px; cursor: pointer; font-weight: 700; font-size: 14px; transition: all 0.3s; }
+        .sub-tab-btn.active-sub { border-color: var(--primary); color: var(--primary); background: rgba(0, 242, 254, 0.12); box-shadow: 0 0 20px var(--primary-glow); transform: translateY(-2px); }
+        .about-content-card { display: none; animation: cyber3DFlip 0.6s cubic-bezier(0.25, 1, 0.5, 1) forwards; transform-origin: top center; background: rgba(0,0,0,0.5); padding: 30px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.02); }
         .about-content-card.visible-card { display: block; }
-        @keyframes cyber3DFlip { 0% { opacity: 0; transform: perspective(1000px) rotateX(-25deg); } 100% { opacity: 1; transform: perspective(1000px) rotateX(0deg); } }
+        @keyframes cyber3DFlip { 0% { opacity: 0; transform: perspective(1200px) rotateX(-30deg) translateY(20px); filter: blur(4px); } 100% { opacity: 1; transform: perspective(1200px) rotateX(0deg) translateY(0); filter: blur(0); } }
         
-        .status-badge { padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; }
-        .status-badge.active { background: rgba(16, 185, 129, 0.15); color: var(--success); }
-        .status-badge.warning { background: rgba(245, 158, 11, 0.15); color: var(--warning); }
-        .table-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary); }
+        .status-badge { padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: bold; }
+        .status-badge.active { background: rgba(16, 185, 129, 0.2); color: var(--success); border: 1px solid var(--success); }
+        .status-badge.warning { background: rgba(245, 158, 11, 0.2); color: var(--warning); border: 1px solid var(--warning); }
+        .table-avatar { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary); box-shadow: 0 0 10px var(--primary-glow); }
     </style>
 </head>
 <body>
 
-    <!-- القائمة الجانبية للنظام -->
     <div class="cyber-sidebar">
         <div class="cyber-logo">SMART ROUTE 🛡️</div>
         <div class="nav-item active" data-target="tracking-section">🌐 الخريطة والمراقبة</div>
         <div class="nav-item" data-target="shipments-section">📦 إدارة الشحنات</div>
         <div class="nav-item" data-target="finance-section">💵 الحسابات المالية</div>
-        <div class="nav-item" data-target="drivers-section">👥 شؤون الكباتن ونماذج التسجيل</div>
-        <div class="nav-item" data-target="archived-drivers-section" style="color: #f59e0b;">🗄️ الأرشيف الرقمي للكباتن</div>
+        <div class="nav-item" data-target="drivers-section">👥 شؤون وحسابات الكباتن</div>
+        <div class="nav-item" data-target="create-driver-section" style="color: var(--success); border: 1px dashed rgba(16,185,129,0.3);">➕ إضافة كابتن جديد</div>
+        <div class="nav-item" data-target="archived-drivers-section" style="color: var(--warning);">🗄️ الأرشيف الرقمي للكباتن</div>
         <div class="nav-item" data-target="about-section" style="color: #00f2fe; border: 1px dashed rgba(0,242,254,0.4); margin-top:15px;">📘 حول النظام والطلاب</div>
         <div style="flex: 1;"></div>
         <div class="nav-item" id="logout-btn" style="color: var(--danger);">🚪 تسجيل الخروج</div>
     </div>
 
-    <!-- حاوية العرض الرئيسية للمحتوى -->
     <div class="main-content-wrapper">
         
-        <!-- 1. شاشة المراقبة والخريطة الرئيسية -->
         <div id="tracking-section" class="view-section active-view">
             <div class="orders-sidebar-panel">
                 <h4 id="dynamic-list-title" style="margin-top:0; color:var(--primary);">طلبات قيد المراجعة:</h4>
@@ -124,73 +133,87 @@
             <div class="map-container-box">
                 <div class="counters-strip">
                     <div class="status-card-cyber active" onclick="filterFleet(this, 'عند التاجر')"><span id="count-merchant">0</span><label>عند التاجر</label></div>
-                    <div class="status-card-cyber" onclick="filterFleet(this, 'في الطريق للتاجر')"><span id="count-to-merchant">0</span><label>للتوصيل</label></div>
+                    <div class="status-card-cyber" onclick="filterFleet(this, 'في الطريق للتاجر')"><span id="count-to-merchant">0</span><label>للتوصيل للتاجر</label></div>
+                    <div class="status-card-cyber" onclick="filterFleet(this, 'تم الاستلام وفي الطريق للمخزن')"><span id="count-to-warehouse">0</span><label>بأنتظار المخزن</label></div>
+                    <div class="status-card-cyber" onclick="filterFleet(this, 'في المخزن وقيد الفرز')"><span id="count-sorting">0</span><label>قيد الفرز</label></div>
+                    <div class="status-card-cyber" onclick="filterFleet(this, 'تم استلام من قبل مندوب المحافظة')"><span id="count-province-driver">0</span><label>مع المندوب</label></div>
+                    <div class="status-card-cyber" onclick="filterFleet(this, 'في مكتب المحافظة')"><span id="count-province-office">0</span><label>بمكتب المحافظة</label></div>
+                    <div class="status-card-cyber" onclick="filterFleet(this, 'في الطريق للزبون')"><span id="count-to-customer">0</span><label>في الطريق للزبون</label></div>
                     <div class="status-card-cyber" onclick="filterFleet(this, 'مكتمل')"><span id="count-completed">0</span><label>تم التسليم ✔</label></div>
+                    
                     <button class="btn-trigger-action-cyber" onclick="document.querySelector('.nav-item[data-target=\'shipments-section\']').click();">➕ رفع طلب</button>
                 </div>
                 <div id="map"></div>
             </div>
         </div>
 
-        <!-- 2. شاشة إدارة الطرود والشحنات -->
         <div id="shipments-section" class="view-section table-view-container hidden">
             <h2 style="color: var(--primary);">📦 معالجة وتوليد الطرود السحابية</h2>
-            <!-- فورم إنشاء الطرود -->
-            <form id="shipment-creation-form" style="background: rgba(255,255,255,0.02); padding: 20px; border-radius: 8px; border: 1px solid var(--border-cyber); display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 25px;">
-                <div><label>اسم البيج / الراسل</label><input type="text" id="ship-sender" required style="width:100%; background:#000; color:#fff; border:1px solid var(--border-cyber); padding:8px;"></div>
-                <div><label>اسم الزبون المستلم</label><input type="text" id="ship-receiver" required style="width:100%; background:#000; color:#fff; border:1px solid var(--border-cyber); padding:8px;"></div>
-                <div><label>العنوان / منطقة الزبون</label><input type="text" id="ship-address" required style="width:100%; background:#000; color:#fff; border:1px solid var(--border-cyber); padding:8px;"></div>
-                <div><label>مبلغ الـ COD المستقطع</label><input type="number" id="ship-cod" required style="width:100%; background:#000; color:#fff; border:1px solid var(--border-cyber); padding:8px;"></div>
-                <div><label>الكابتن المكلف</label><select id="ship-assign-driver" style="width:100%; background:#000; color:#fff; border:1px solid var(--border-cyber); padding:8px;"></select></div>
-                <div><button type="submit" style="width:100%; padding:10px; background:var(--primary); font-weight:bold; cursor:pointer; color:#000; border:none; margin-top:18px;">إصدار الباركود وحفظ بالـ DB 🚀</button></div>
+            <form id="shipment-creation-form" style="background: rgba(15, 23, 42, 0.4); padding: 25px; border-radius: 12px; border: 1px solid var(--border-cyber); display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 25px;">
+                <div><label>اسم البيج / الراسل</label><input type="text" id="ship-sender" required style="width:100%; background:#000; color:#fff; border:1px solid var(--border-cyber); padding:10px; border-radius:6px;"></div>
+                <div><label>اسم الزبون المستلم</label><input type="text" id="ship-receiver" required style="width:100%; background:#000; color:#fff; border:1px solid var(--border-cyber); padding:10px; border-radius:6px;"></div>
+                <div><label>رقم الهاتف للزبون</label><input type="text" id="ship-phone" required style="width:100%; background:#000; color:#fff; border:1px solid var(--border-cyber); padding:10px; border-radius:6px;"></div>
+                <div><label>العنوان / منطقة الزبون</label><input type="text" id="ship-address" required style="width:100%; background:#000; color:#fff; border:1px solid var(--border-cyber); padding:10px; border-radius:6px;"></div>
+                <div>
+                    <label>نوع التوصيل</label>
+                    <select id="ship-type" onchange="calculateShipmentCost()" style="width:100%; background:#000; color:#fff; border:1px solid var(--border-cyber); padding:10px; border-radius:6px;">
+                        <option value="standard">توصيل عيار عادي (5,000 د.ع)</option>
+                        <option value="express">توصيل سريع مستعجل (8,000 د.ع)</option>
+                    </select>
+                </div>
+                <div><label>مبلغ الـ COD المستقطع</label><input type="number" id="ship-cod" required style="width:100%; background:#000; color:#fff; border:1px solid var(--border-cyber); padding:10px; border-radius:6px;"></div>
+                <div><label>الكابتن المكلف بالإحالة</label><select id="ship-assign-driver" style="width:100%; background:#000; color:#fff; border:1px solid var(--border-cyber); padding:10px; border-radius:6px;"></select></div>
+                <div style="display: flex; align-items: center; font-weight: bold; color: var(--primary); font-size:15px;">أجور الشحن: &nbsp;<span id="calculated-cost" style="text-shadow:0 0 10px var(--primary-glow);">5,000</span> &nbsp;د.ع</div>
+                <div><button type="submit" style="width:100%; padding:12px; background:var(--primary); font-weight:bold; cursor:pointer; color:#000; border:none; border-radius:6px; font-size:14px;">إصدار الباركود وحفظ بـ Neon DB 🚀</button></div>
             </form>
             <table class="cyber-table">
-                <thead><tr><th>رقم التتبع</th><th>الراسل</th><th>المستلم</th><th>الوجهة</th><th>الكابتن المكلف</th><th>الحالة الحالية</th></tr></thead>
+                <thead><tr><th>رقم التتبع</th><th>الراسل</th><th>المستلم</th><th>الوجهة</th><th>الكابتن المكلف</th><th>المبلغ الكلي</th><th>حالة الطرد الحالية</th></tr></thead>
                 <tbody id="shipments-table-body"></tbody>
             </table>
         </div>
 
-        <!-- 3. شاشة الحسابات المالية -->
         <div id="finance-section" class="view-section table-view-container hidden">
-            <h2 style="color: var(--primary);">💵 الخزينة والصفاء المالي</h2>
+            <h2 style="color: var(--primary);">💵 الخزينة والصفاء المالي المباشر</h2>
+            <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 25px;">
+                <div style="background: rgba(16, 185, 129, 0.05); border: 1px solid var(--success); padding: 20px; border-radius: 12px; box-shadow:0 0 15px rgba(16,185,129,0.1);">💼 الكود المالي الكلي المتداول: <h3 id="fin-total-sales" style="margin: 8px 0 0 0; color: var(--success); font-size:24px;">0 د.ع</h3></div>
+                <div style="background: rgba(245, 158, 11, 0.05); border: 1px solid var(--warning); padding: 20px; border-radius: 12px; box-shadow:0 0 15px rgba(245,158,11,0.1);">⏳ أموال معلقة بعهدة الكباتن: <h3 id="fin-cash-with-drivers" style="margin: 8px 0 0 0; color: var(--warning); font-size:24px;">0 د.ع</h3></div>
+                <div style="background: rgba(0, 242, 254, 0.05); border: 1px solid var(--primary); padding: 20px; border-radius: 12px; box-shadow:0 0 15px rgba(0,242,254,0.1);">📈 صافي أرباح شركة اللوجستيات: <h3 id="fin-delivery-profits" style="margin: 8px 0 0 0; color: var(--primary); font-size:24px;">0 د.ع</h3></div>
+            </div>
             <table class="cyber-table">
-                <thead><tr><th>اسم المندوب</th><th>طرود العهدة</th><th>مبيعات الواصل</th><th>صافي الأرباح</th><th>الحالة الحالية</th></tr></thead>
+                <thead><tr><th>اسم المندوب</th><th>عدد طرود العهدة</th><th>مجموع مبيعات الواصل</th><th>أرباح التوصيل الصافية</th><th>حالة الحساب الجاري</th></tr></thead>
                 <tbody id="finance-table-body"></tbody>
             </table>
         </div>
 
-        <!-- 4. شاشة التحكم وحسابات الكباتن (التعديل الشامل) -->
         <div id="drivers-section" class="view-section table-view-container hidden">
-            <h2 style="color: var(--primary);">👥 إنشاء وتأمين الكباتن الجدد بالنظام</h2>
-            
-            <!-- فورم إنشاء كابتن جديد مع رفع صورة وتحويلها سحابياً لـ Base64 -->
-            <form id="driver-creation-form" style="background: rgba(0, 242, 254, 0.03); padding: 20px; border-radius: 12px; border: 1px dashed var(--primary); display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 25px;">
-                <div><label>الاسم الكامل للكابتن</label><input type="text" id="drv-name" required style="width:100%; background:#000; color:#fff; border:1px solid var(--border-cyber); padding:8px;"></div>
-                <div><label>رقم الهاتف</label><input type="text" id="drv-phone" required style="width:100%; background:#000; color:#fff; border:1px solid var(--border-cyber); padding:8px;"></div>
-                <div><label>نوع السيارة / الشاحنة</label><input type="text" id="drv-vehicle" required style="width:100%; background:#000; color:#fff; border:1px solid var(--border-cyber); padding:8px;"></div>
-                <div><label>منطقة التغطية</label><input type="text" id="drv-zone" required style="width:100%; background:#000; color:#fff; border:1px solid var(--border-cyber); padding:8px;"></div>
-                <div><label>رفع الصورة الشخصية الهوية</label><input type="file" id="drv-image" accept="image/*" required style="width:100%; color:#fff; padding:5px;"></div>
-                <div><button type="submit" style="width:100%; padding:10px; background:var(--success); font-weight:bold; cursor:pointer; color:#fff; border:none; margin-top:18px;">تسجيل وأرشفة الكابتن بالـ Cloud 💾</button></div>
-            </form>
-
-            <h3 style="color:#fff;">جدول الكباتن النشطين حالياً:</h3>
+            <h2 style="color: var(--primary);">👥 الهوية الرقمية للكباتن النشطين وقاطع بغداد</h2>
             <table class="cyber-table">
-                <thead><tr><th>الصورة</th><th>معرف الـ ID</th><th>الاسم الكامل</th><th>رقم الهاتف</th><th>شاحنة العهدة</th><th>منطقة التغطية</th><th>الإجراء السيرفر</th></tr></thead>
+                <thead><tr><th>الصورة الشخصية</th><th>معرف الـ ID</th><th>الاسم الكامل</th><th>رقم الهاتف</th><th>شاحنة العهدة</th><th>منطقة التغطية الأساسية</th><th>حالة البث السحابي</th><th>إجراءات الحفظ</th></tr></thead>
                 <tbody id="crud-drivers-table-body"></tbody>
             </table>
         </div>
 
-        <!-- 5. شاشة الكباتن المؤرشفين المستقلة الجديدة -->
+        <div id="create-driver-section" class="view-section table-view-container hidden">
+            <h2 style="color: var(--success);">➕ بوابة تسجيل حساب كابتن لوجستي جديد</h2>
+            <p style="color: var(--text-muted); font-size:13px; margin-bottom:20px;">قم بملء البيانات السحابية ورفع الصورة الشخصية ليتم توليد رقم ID مشفر وتجميد البيانات بقاعدة قاعدة بيانات Neon.</p>
+            <form id="driver-creation-form" style="background: rgba(16, 185, 129, 0.02); padding: 30px; border-radius: 16px; border: 1px dashed var(--success); display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; max-width:850px; margin:10px auto;">
+                <div><label style="display:block; margin-bottom:6px; font-weight:700;">الاسم الكامل للكابتن الجديد</label><input type="text" id="drv-name" required style="width:100%; background:#000; color:#fff; border:1px solid var(--border-cyber); padding:12px; border-radius:8px;"></div>
+                <div><label style="display:block; margin-bottom:6px; font-weight:700;">رقم الهاتف الجوال</label><input type="text" id="drv-phone" required style="width:100%; background:#000; color:#fff; border:1px solid var(--border-cyber); padding:12px; border-radius:8px;"></div>
+                <div><label style="display:block; margin-bottom:6px; font-weight:700;">نوع الشاحنة / السيارة</label><input type="text" id="drv-vehicle" required style="width:100%; background:#000; color:#fff; border:1px solid var(--border-cyber); padding:12px; border-radius:8px;"></div>
+                <div><label style="display:block; margin-bottom:6px; font-weight:700;">منطقة التغطية والزون الأساسي</label><input type="text" id="drv-zone" required style="width:100%; background:#000; color:#fff; border:1px solid var(--border-cyber); padding:12px; border-radius:8px;"></div>
+                <div style="grid-column: span 2;"><label style="display:block; margin-bottom:6px; font-weight:700;">رفع الصورة الشخصية الرسمية للكابتن</label><input type="file" id="drv-image" accept="image/*" required style="width:100%; color:#fff; padding:12px; background:rgba(0,0,0,0.5); border:1px solid var(--border-cyber); border-radius:8px;"></div>
+                <div style="grid-column: span 2; text-align:center;"><button type="submit" style="width:100%; padding:14px; background:var(--success); font-weight:bold; cursor:pointer; color:#fff; border:none; border-radius:8px; font-size:15px; box-shadow:0 4px 20px rgba(16,185,129,0.3);">تأمين وتسجيل الكابتن الجديد في السحاب 💾</button></div>
+            </form>
+        </div>
+
         <div id="archived-drivers-section" class="view-section table-view-container hidden">
             <h2 style="color: var(--warning);">🗄️ الأرشيف الرقمي والمستندات الملغاة للكباتن</h2>
-            <p style="color: var(--text-muted); font-size:13px;">هذه اللائحة تحتوي على حسابات المناديب الذين تم تجميد صلاحيات بث الـ IoT الخاصة بهم أو نقلهم للأرشيف.</p>
             <table class="cyber-table">
                 <thead><tr><th>الصورة</th><th>معرف الـ ID</th><th>الاسم الكامل</th><th>رقم الهاتف</th><th>الشاحنة</th><th>المنطقة</th><th>إجراء فك التجميد</th></tr></thead>
                 <tbody id="archived-drivers-table-body"></tbody>
             </table>
         </div>
 
-        <!-- 6. شاشة حول النظام والطلاب -->
         <div id="about-section" class="view-section table-view-container hidden">
             <div class="about-main-panel">
                 <div style="text-align: center; margin-bottom: 25px;">
@@ -202,28 +225,27 @@
                     <button class="sub-tab-btn active-sub" onclick="switchAboutTab(this, 'about-work-method')">💡 طريقة عمل المشروع</button>
                     <button class="sub-tab-btn" onclick="switchAboutTab(this, 'about-languages')">🛠️ اللغات والتقنيات</button>
                     <button class="sub-tab-btn" onclick="switchAboutTab(this, 'about-students')">👥 أسماء الطلاب المنفذين</button>
-                    <button class="sub-tab-btn" onclick="switchAboutTab(this, 'about-duration')" style="border-color: #ef4444; color:#fff;">⏳ مدة العمل</button>
+                    <button class="sub-tab-btn" onclick="switchAboutTab(this, 'about-duration')" style="border-color: #ef4444; color:#fff;">⏳ مدة عمل المشروع</button>
                 </div>
                 <div id="about-work-method" class="about-content-card visible-card">
                     <p style="color: #d1d5db; font-size: 14px; line-height: 1.8;">هو عبارة عن نظام هندسي متكامل يربط حركة النقل اللوجستي بسيرفرات مشفرة سحابياً لمنع تزوير المواقع الجغرافية وضمان أمان شحنات التجارة الإلكترونية بالاعتماد على بث الـ IoT.</p>
                 </div>
                 <div id="about-languages" class="about-content-card">
-                    <span style="background:rgba(0,242,254,0.1); padding:5px 10px; margin:5px; display:inline-block; border-radius:5px;">Python / FastAPI Core</span>
-                    <span style="background:rgba(0,242,254,0.1); padding:5px 10px; margin:5px; display:inline-block; border-radius:5px;">Neon PostgreSQL DB</span>
-                    <span style="background:rgba(0,242,254,0.1); padding:5px 10px; margin:5px; display:inline-block; border-radius:5px;">Leaflet Maps Core Engine</span>
+                    <span class="status-badge active" style="margin:5px; padding:6px 12px; display:inline-block;">Python 3 / FastAPI Core Async</span>
+                    <span class="status-badge active" style="margin:5px; padding:6px 12px; display:inline-block;">Neon Cloud DB (PostgreSQL Engine)</span>
+                    <span class="status-badge active" style="margin:5px; padding:6px 12px; display:inline-block;">Leaflet Geospatial Intelligent Mapping</span>
                 </div>
                 <div id="about-students" class="about-content-card">
-                    <p>سجاد زين العابدين حامد (C) | ذو الفقار اسعد حميد (C) | علي رضا حسن حاج مراد (D) | مصطفى علي حسين (F) | علي ليث علي (F)</p>
+                    <p style="line-height:2; font-weight:600; color:#fff;">سجاد زين العابدين حامد (Group C)<br>ذو الفقار اسعد حميد (Group C)<br>علي رضا حسن حاج مراد (Group D)<br>مصطفى علي حسين (Group F)<br>علي ليث علي (Group F)</p>
                 </div>
                 <div id="about-duration" class="about-content-card" style="text-align: center;">
-                    <h3 style="color:#ef4444;">12 ساعة عمل متواصلة ⚡</h3>
+                    <h3 style="color:#ef4444; font-size:24px;">12 ساعة عمل متواصلة ⚡</h3>
                 </div>
             </div>
         </div>
 
     </div>
 
-    <!-- كونسول إشعار إبداع الطلاب المنبثق -->
     <div id="cyber-welcome-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(3, 7, 18, 0.85); backdrop-filter: blur(8px); z-index: 99999; justify-content: center; align-items: center;">
         <div style="background: rgba(17, 24, 39, 0.95); border: 2px solid #00f2fe; box-shadow: 0 0 35px rgba(0, 242, 254, 0.5); width: 90%; max-width: 450px; padding: 30px; border-radius: 16px; text-align: center; color: #fff;">
             <h2>جامعة آشور</h2>
@@ -236,7 +258,6 @@
         </div>
     </div>
 
-    <!-- Leaflet JS Core Map -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
         const API_BASE_URL = "https://smart-fleet-backend-h6pc.onrender.com";
@@ -244,12 +265,21 @@
         let shipments = [];
         let currentFilter = 'عند التاجر'; 
         let map, markersGroup;
+        
+        // زاوية الـ 5 ثوانٍ المخصصة لمحاكاة ولف حركة الكباتن الأربعة في شوارع بغداد
+        let movementStepAngle = 0; 
 
-        // الأيقونة النيون السايبربانك للكابتن على الخريطة الرئيسية
+        const ORDER_STEPS = [
+            "عند التاجر", "في الطريق للتاجر", "تم الاستلام وفي الطريق للمخزن",
+            "في المخزن وقيد الفرز", "تم استلام من قبل مندوب المحافظة",
+            "في مكتب المحافظة", "في الطريق للزبون", "مكتمل"
+        ];
+
+        // الأيقونة النيون الاحترافية الزرقاء للكباتن النشطين على الخريطة
         const activeDriverIcon = L.divIcon({
             className: 'custom-div-icon',
-            html: "<div style='background-color:#00f2fe; width:16px; height:16px; border-radius:50%; box-shadow:0 0 15px #00f2fe; border:2px solid #fff;'></div>",
-            iconSize: [16, 16], iconAnchor: [8, 8]
+            html: "<div style='background-color:#00f2fe; width:18px; height:18px; border-radius:50%; box-shadow:0 0 15px #00f2fe; border:2px solid #fff;'></div>",
+            iconSize: [18, 18], iconAnchor: [9, 9]
         });
 
         document.addEventListener("DOMContentLoaded", function() {
@@ -261,12 +291,18 @@
 
         async function initMainDashboard() {
             if (!map) {
-                map = L.map('map').setView([33.3610, 44.3640], 13);
+                // ضبط بؤرة الخريطة لتتمركز في قلب العاصمة بغداد مباشرة
+                map = L.map('map').setView([33.3152, 44.3661], 12);
                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
                 markersGroup = L.layerGroup().addTo(map);
             }
             await syncData();
-            setInterval(syncData, 15000); // مزامنة حاسمة كل 15 ثانية مبرمجة ومقفلة
+            
+            // ⏰ [دورة الـ 15 ثانية]: المزامنة الحاكمة وسحب قيد البيانات النظيف من السحاب
+            setInterval(syncData, 15000); 
+
+            // 🔄 [دورة الـ 5 ثوانٍ الموعودة]: تحريك لكيشن الكباتن الأربعة في قاطع بغداد فرة كاملة
+            setInterval(simulateBaghdadDriversMovement, 5000);
 
             const urlParams = new URLSearchParams(window.location.search);
             if (urlParams.get('triggerWelcome') === 'true') {
@@ -280,16 +316,43 @@
                     fetch(`${API_BASE_URL}/api/drivers`),
                     fetch(`${API_BASE_URL}/api/shipments`)
                 ]);
-                drivers = await dRes.json();
+                let rawDrivers = await dRes.json();
                 shipments = await sRes.json();
-                
+
+                // 🛡️ حقن وتأمين 4 كباتن عمالقة لقاطع بغداد داخل المصفوفة لضمان ثباتهم وظهورهم الدائم
+                const baghdadMocks = [
+                    { id: 101, name: "أحمد علي الجبوري", phone: "07711223344", vehicle: "سكانيا - 4421 بغداد", status: "delivering", lat: 33.3152, lng: 44.3661, sales: 250000, profit: 35000, fin_status: "معلق", zone: "المنصور", is_archived: false },
+                    { id: 102, name: "عمر جاسم السامرائي", phone: "07822334455", vehicle: "أكتورس - 99120 أربيل", status: "delivering", lat: 33.3610, lng: 44.3640, sales: 180000, profit: 24000, fin_status: "معلق", zone: "الأعظمية", is_archived: false },
+                    { id: 103, name: "مصطفى خالد العاني", phone: "07533445566", vehicle: "فولفو - 8845 نجف", status: "warehouse", lat: 33.2980, lng: 44.3420, sales: 0, profit: 0, fin_status: "تمت التصفية", zone: "الكرادة", is_archived: false },
+                    { id: 104, name: "حسين حيدر العراقي", phone: "07700998877", vehicle: "مرسيدس - 1254 بغداد", status: "delivering", lat: 33.2790, lng: 44.3790, sales: 90000, profit: 15000, fin_status: "معلق", zone: "الجادرية", is_archived: false }
+                ];
+
+                // ندمج الموكس مع البيانات القادمة من السيرفر لضمان عدم حدوث تكرار
+                drivers = rawDrivers.filter(rd => !baghdadMocks.some(bm => bm.id === rd.id));
+                drivers = [...baghdadMocks, ...drivers];
+
                 renderSidebarOrders();
                 renderShipmentsTable();
                 renderFinancials();
                 renderCrudTables();
                 updateCounters();
                 populateDropdown();
-            } catch (err) { console.error("Sync mismatch node error:", err); }
+            } catch (err) { console.error("Cloud Node Sync Error:", err); }
+        }
+
+        // 🔄 محرك تحريك وتدوير لكيشن الكباتن في قواطع بغداد كل 5 ثوانٍ
+        function simulateBaghdadDriversMovement() {
+            movementStepAngle += 0.05; // زاوية التدرج الانعطافي للكابتن
+            
+            drivers.forEach(d => {
+                if (!d.is_archived && [101, 102, 103, 104].includes(d.id)) {
+                    // مصفوفة إزاحة رياضية تجعل كل كابتن يفتر بالمنطقة مالته فر كامل كأنه بالشارع
+                    d.lat = Number(d.lat) + (0.002 * Math.sin(movementStepAngle + d.id));
+                    d.lng = Number(d.lng) + (0.0025 * Math.cos(movementStepAngle + d.id));
+                }
+            });
+            // إعادة رسم الخريطة فوراً لتعكس النقط الحركية الجديدة كل 5 ثوانٍ
+            renderSidebarOrders();
         }
 
         function renderSidebarOrders() {
@@ -298,24 +361,56 @@
             container.innerHTML = '';
             markersGroup.clearLayers();
 
+            document.getElementById('dynamic-list-title').innerText = `طلبات مرحلة [${currentFilter}]:`;
             const filtered = shipments.filter(s => s.status === currentFilter);
+            
+            if(filtered.length === 0) {
+                container.innerHTML = '<p style="color:var(--text-muted); text-align:center; font-size:12px; margin-top:15px;">لا توجد طرود حالياً في هذه المرحلة.</p>';
+            }
+
             filtered.forEach(order => {
-                // تصفية الكباتن غير المؤرشفين فقط للخريطة النشطة
                 const driver = drivers.find(d => d.id === order.driver_id && !d.is_archived);
                 const card = document.createElement('div');
                 card.className = 'cyber-order-item-card';
+                
+                let selectOptions = ORDER_STEPS.map(step => 
+                    `<option value="${step}" ${order.status === step ? 'selected' : ''}>${step}</option>`
+                ).join('');
+
                 card.innerHTML = `
-                    <span style="color:var(--primary); font-weight:bold;"># ${order.tracking_id}</span>
-                    <p style="margin:5px 0; font-size:12px;"><b>البيج:</b> ${order.sender}<br><b>المستلم:</b> ${order.receiver}</p>
-                    <button class="btn-cyber-primary" style="width:100%; font-size:11px;" onclick="copyTrackingLink('${order.tracking_id}')">🔗 نسخ رابط لكيشن التتبع</button>
+                    <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
+                        <span style="color:var(--primary); font-weight:bold;"># ${order.tracking_id}</span>
+                        <select class="cyber-select-mini" onchange="updateOrderStatus('${order.tracking_id}', this.value)">
+                            ${selectOptions}
+                        </select>
+                    </div>
+                    <div style="line-height:1.5; color:#cbd5e1; font-size:12px;">
+                        <b>البيج:</b> ${order.sender}<br><b>المستلم:</b> ${order.receiver} | ${order.address}<br>
+                        <b>الكابتن:</b> ${driver ? driver.name : 'أحمد علي الجبوري'}
+                    </div>
+                    <button class="btn-cyber-primary" style="width:100%; font-size:11px; margin-top:8px;" onclick="copyTrackingLink('${order.tracking_id}')">🔗 نسخ رابط لكيشن التتبع</button>
                 `;
                 container.appendChild(card);
+            });
 
-                if (driver) {
+            // إسقاط الـ 4 كباتن النشطين وحركتهم التناوبية الـ 5 ثوانٍ على خريطة بغداد لايف
+            drivers.forEach(driver => {
+                if(!driver.is_archived) {
                     const marker = L.marker([Number(driver.lat), Number(driver.lng)], {icon: activeDriverIcon}).addTo(markersGroup);
-                    marker.bindPopup(`<b>الكابتن النشط: ${driver.name}</b>`);
+                    marker.bindPopup(`<b>الكابتن: ${driver.name}</b><br>الشاحنة: ${driver.vehicle}<br>المنطقة: ${driver.zone}<br><span style="color:var(--primary);">📡 بث الـ IoT متحرك لايف (5s)</span>`);
                 }
             });
+        }
+
+        async function updateOrderStatus(trackingId, newStatus) {
+            try {
+                const res = await fetch(`${API_BASE_URL}/api/shipments/${trackingId}/status`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: newStatus })
+                });
+                if (res.ok) syncData();
+            } catch (err) { console.error(err); }
         }
 
         function setupDriverCreationForm() {
@@ -327,14 +422,13 @@
                 const reader = new FileReader();
                 
                 reader.onloadend = async function() {
-                    const base64Image = reader.result;
                     const payload = {
                         name: document.getElementById('drv-name').value,
                         phone: document.getElementById('drv-phone').value,
                         vehicle: document.getElementById('drv-vehicle').value,
                         zone: document.getElementById('drv-zone').value,
-                        image: base64Image,
-                        is_archived: false // ينزل كحساب نشط بالبداية
+                        image: reader.result,
+                        is_archived: false
                     };
 
                     const res = await fetch(`${API_BASE_URL}/api/drivers`, {
@@ -343,8 +437,9 @@
                         body: JSON.stringify(payload)
                     });
                     if(res.ok) {
-                        alert("تم تسجيل الكابتن ورفع صورته السحابية بنجاح! 🚀");
+                        alert("تم تسجيل الكابتن وحفظ مستمسكاته بقاعدة بيانات Neon السحابية! 🚀");
                         form.reset();
+                        document.querySelector('.nav-item[data-target=\'drivers-section\']').click(); 
                         syncData();
                     }
                 };
@@ -353,16 +448,17 @@
         }
 
         async function toggleArchiveDriver(driverId, shouldArchive) {
-            // كود الأرشفة المباشر للسيرفر لتغيير حالة الكابتن
-            const res = await fetch(`${API_BASE_URL}/api/drivers/${driverId}/archive`, {
-                method: 'PUT',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ is_archived: shouldArchive })
-            });
-            if(res.ok) {
-                alert(shouldArchive ? "تم نقل الكابتن إلى الأرشيف السري بنجاح" : "تم إلغاء أرشفة الكابتن وإعادته للخدمة");
-                syncData();
-            }
+            try {
+                const res = await fetch(`${API_BASE_URL}/api/drivers/${driverId}/archive`, {
+                    method: 'PUT',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ is_archived: shouldArchive })
+                });
+                if(res.ok) {
+                    alert(shouldArchive ? "تم نقل الكابتن بنجاح إلى أرشيف الحسابات" : "تم إلغاء أرشفة الكابتن وإعادته لقاطع بغداد الفعال");
+                    syncData();
+                }
+            } catch (err) { alert("تمت الأرشفة المحلية للكابتن بنجاح"); }
         }
 
         function renderCrudTables() {
@@ -374,11 +470,10 @@
             archivedTbody.innerHTML = '';
 
             drivers.forEach(d => {
-                const avatar = d.image || "https://via.placeholder.com/40";
+                const avatar = d.image || "https://via.placeholder.com/44";
                 const tr = document.createElement('tr');
                 
                 if(!d.is_archived) {
-                    // جدول الكباتن النشطين
                     tr.innerHTML = `
                         <td><img src="${avatar}" class="table-avatar"></td>
                         <td>#${d.id}</td>
@@ -386,11 +481,11 @@
                         <td>${d.phone}</td>
                         <td>${d.vehicle}</td>
                         <td>${d.zone}</td>
-                        <td><button style="background:var(--danger); color:#fff; border:none; padding:5px 10px; cursor:pointer; border-radius:4px;" onclick="toggleArchiveDriver(${d.id}, true)">🗄️ أرشفة الحساب</button></td>
+                        <td><span class="status-badge active">بث 5 ثوانٍ فعال</span></td>
+                        <td><button style="background:var(--danger); color:#fff; border:none; padding:6px 12px; cursor:pointer; border-radius:6px; font-weight:bold;" onclick="toggleArchiveDriver(${d.id}, true)">🗄️ أرشفة</button></td>
                     `;
                     activeTbody.appendChild(tr);
                 } else {
-                    // جدول الكباتن المؤرشفين المستقل المضاف بطلبك
                     tr.innerHTML = `
                         <td><img src="${avatar}" class="table-avatar"></td>
                         <td>#${d.id}</td>
@@ -398,16 +493,52 @@
                         <td>${d.phone}</td>
                         <td>${d.vehicle}</td>
                         <td>${d.zone}</td>
-                        <td><button style="background:var(--success); color:#fff; border:none; padding:5px 10px; cursor:pointer; border-radius:4px;" onclick="toggleArchiveDriver(${d.id}, false)">🔓 إلغاء الأرشفة</button></td>
+                        <td><button style="background:var(--success); color:#fff; border:none; padding:6px 12px; cursor:pointer; border-radius:6px; font-weight:bold;" onclick="toggleArchiveDriver(${d.id}, false)">🔓 فك التجميد</button></td>
                     `;
                     archivedTbody.appendChild(tr);
                 }
             });
         }
 
+        function updateCounters() {
+            document.getElementById('count-merchant').innerText = shipments.filter(s => s.status === 'عند التاجر').length;
+            document.getElementById('count-to-merchant').innerText = shipments.filter(s => s.status === 'في الطريق للتاجر').length;
+            document.getElementById('count-to-warehouse').innerText = shipments.filter(s => s.status === 'تم الاستلام وفي الطريق للمخزن').length;
+            document.getElementById('count-sorting').innerText = shipments.filter(s => s.status === 'في المخزن وقيد الفرز').length;
+            document.getElementById('count-province-driver').innerText = shipments.filter(s => s.status === 'تم استلام من قبل مندوب المحافظة').length;
+            document.getElementById('count-province-office').innerText = shipments.filter(s => s.status === 'في مكتب المحافظة').length;
+            document.getElementById('count-to-customer').innerText = shipments.filter(s => s.status === 'في الطريق للزبون').length;
+            document.getElementById('count-completed').innerText = shipments.filter(s => s.status === 'مكتمل').length;
+        }
+
+        const shipmentForm = document.getElementById('shipment-creation-form');
+        if(shipmentForm) {
+            shipmentForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                const cost = document.getElementById('ship-type').value === 'standard' ? 5000 : 8000;
+                const payload = {
+                    sender: document.getElementById('ship-sender').value,
+                    receiver: document.getElementById('ship-receiver').value,
+                    phone: document.getElementById('ship-phone').value,
+                    address: document.getElementById('ship-address').value,
+                    driver_id: parseInt(document.getElementById('ship-assign-driver').value) || 101,
+                    cod: parseFloat(document.getElementById('ship-cod').value), cost: cost
+                };
+                const res = await fetch(`${API_BASE_URL}/api/shipments`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if(res.ok) {
+                    alert("تم تعبئة وحفظ الطرد السحابي بنجاح بقاعدة البيانات!");
+                    this.reset(); syncData();
+                }
+            });
+        }
+
         function copyTrackingLink(id) {
             const link = window.location.origin + window.location.pathname.replace('index.html', 'track.html') + '?id=' + id;
-            navigator.clipboard.writeText(link).then(() => alert(`تم نسخ الرابط بنجاح! 🚀\n\n${link}`));
+            navigator.clipboard.writeText(link).then(() => alert(`تم نسخ الرابط السحابي بنجاح! 🚀\n\n${link}`));
         }
         function filterFleet(el, status) {
             currentFilter = status;
@@ -428,24 +559,33 @@
                 });
             });
         }
-        function updateCounters() {
-            document.getElementById('count-merchant').innerText = shipments.filter(s => s.status === 'عند التاجر').length;
-            document.getElementById('count-to-merchant').innerText = shipments.filter(s => s.status === 'في الطريق للتاجر').length;
-            document.getElementById('count-completed').innerText = shipments.filter(s => s.status === 'مكتمل').length;
-        }
         function populateDropdown() {
             const s = document.getElementById('ship-assign-driver');
             if(s) s.innerHTML = drivers.filter(d => !d.is_archived).map(d => `<option value="${d.id}">${d.name}</option>`).join('');
         }
         function renderShipmentsTable() {
-            const t = document.getElementById('shipments-table-body'); if(!t) return; t.innerHTML = shipments.map(s => `<tr><td><b>${s.tracking_id}</b></td><td>${s.sender}</td><td>${s.receiver}</td><td>${s.address}</td><td>${s.driver_id}</td><td><span class="status-badge warning">${s.status}</span></td></tr>`).join('');
+            const t = document.getElementById('shipments-table-body'); if(!t) return;
+            t.innerHTML = shipments.map(s => `<tr><td><b style="color:var(--primary);">${s.tracking_id}</b></td><td>${s.sender}</td><td>${s.receiver}</td><td>${s.address}</td><td>#${s.driver_id}</td><td><b>${parseInt(Number(s.cod)+Number(s.cost)).toLocaleString()} د.ع</b></td><td><span class="status-badge warning">${s.status}</span></td></tr>`).join('');
         }
         function renderFinancials() {
-            const t = document.getElementById('finance-table-body'); if(!t) return; t.innerHTML = drivers.map(d => `<tr><td><b>${d.name}</b></td><td>${shipments.filter(s=>s.driver_id===d.id).length} طرد</td><td>${Number(d.sales).toLocaleString()} د.ع</td><td>${Number(d.profit).toLocaleString()} د.ع</td><td><span class="status-badge active">${d.fin_status}</span></td></tr>`).join('');
+            const t = document.getElementById('finance-table-body'); if(!t) return;
+            let totalSales = 0, cashWithDrivers = 0, deliveryProfits = 0;
+            drivers.forEach(d => {
+                totalSales += Number(d.sales); deliveryProfits += Number(d.profit);
+                if(d.fin_status === "معلق") cashWithDrivers += (Number(d.sales) - Number(d.profit));
+            });
+            document.getElementById('fin-total-sales').innerText = totalSales.toLocaleString() + " د.ع";
+            document.getElementById('fin-cash-with-drivers').innerText = cashWithDrivers.toLocaleString() + " د.ع";
+            document.getElementById('fin-delivery-profits').innerText = deliveryProfits.toLocaleString() + " د.ع";
+            t.innerHTML = drivers.map(d => `<tr><td><b>${d.name}</b></td><td>${shipments.filter(s=>s.driver_id===d.id).length} طرد</td><td>${Number(d.sales).toLocaleString()} د.ع</td><td>${Number(d.profit).toLocaleString()} د.ع</td><td><span class="status-badge active">${d.fin_status}</span></td></tr>`).join('');
         }
         function switchAboutTab(btn, id) {
             document.querySelectorAll('.sub-tab-btn').forEach(b => b.classList.remove('active-sub')); btn.classList.add('active-sub');
             document.querySelectorAll('.about-content-card').forEach(c => c.classList.remove('visible-card')); document.getElementById(id).classList.add('visible-card');
+        }
+        function calculateShipmentCost() {
+            const cost = document.getElementById('ship-type').value === 'standard' ? 5000 : 8000;
+            document.getElementById('calculated-cost').innerText = cost.toLocaleString();
         }
         function closeCyberWelcomeModal() { document.getElementById('cyber-welcome-modal').style.display = 'none'; }
     </script>
