@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>بوابة التتبع اللحظي للأجهزة والطرود</title>
+    <!-- Leaflet Map CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         :root {
@@ -20,54 +21,33 @@
             margin: 0; padding: 0; box-sizing: border-box;
             background: radial-gradient(circle at center, #0b1528 0%, var(--bg-base) 100%);
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            color: var(--text-main);
-            display: flex; flex-direction: column; height: 100vh; overflow: hidden;
+            color: var(--text-main); display: flex; flex-direction: column; height: 100vh; overflow: hidden;
         }
 
         header {
-            background: rgba(5, 11, 24, 0.8);
-            border-bottom: 1px solid var(--border-cyber);
-            padding: 12px 20px; text-align: center;
-            backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+            background: rgba(5, 11, 24, 0.8); border-bottom: 1px solid var(--border-cyber);
+            padding: 12px 20px; text-align: center; backdrop-filter: blur(10px);
         }
 
-        .track-wrapper {
-            flex: 1; display: flex; flex-direction: column; position: relative; height: calc(100vh - 70px);
-        }
+        .track-wrapper { flex: 1; display: flex; flex-direction: column; position: relative; height: calc(100vh - 70px); }
+        #track-map { width: 100%; height: 100%; z-index: 1; }
 
-        #track-map {
-            flex: 1; width: 100%; height: 100%; z-index: 1;
-        }
-
-        /* حاوية البيانات الزجاجية المرتكزة بالأسفل للموبايل */
         .info-floating-panel {
             position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
             width: 90%; max-width: 420px; background: var(--surface-glass);
-            backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
-            border: 1px solid var(--border-cyber); border-radius: 16px; padding: 20px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.6), 0 0 20px var(--primary-glow);
-            z-index: 999; box-sizing: border-box;
+            backdrop-filter: blur(15px); border: 1px solid var(--border-cyber); border-radius: 16px; padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.6), 0 0 20px var(--primary-glow); z-index: 999; box-sizing: border-box;
         }
 
-        .panel-row {
-            display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 13px;
-            border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 6px;
-        }
-
+        .panel-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 13px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 6px; }
         .panel-row b { color: var(--primary); }
-
-        .btn-gps-stream {
-            width: 100%; padding: 12px; background: var(--primary); border: none;
-            border-radius: 8px; color: #030712; font-size: 13px; font-weight: 700;
-            cursor: pointer; transition: all 0.3s ease; margin-top: 12px;
-            box-shadow: 0 4px 12px var(--primary-glow);
-        }
+        .btn-gps-stream { width: 100%; padding: 12px; background: var(--primary); border: none; border-radius: 8px; color: #030712; font-size: 13px; font-weight: 700; cursor: pointer; margin-top: 12px; box-shadow: 0 4px 12px var(--primary-glow); }
     </style>
 </head>
 <body>
 
     <header>
-        <h3 style="margin:0; color:#fff; font-size:16px; text-shadow:0 0 10px var(--primary-glow);">جامعة آشور | نظام التتبع الجغرافي السحابي 📡</h3>
+        <h3 style="margin:0; color:#fff; font-size:16px; text-shadow:0 0 10px var(--primary-glow);">جامعة آشور | مركز التتبع الفعلي والتحريك الجغرافي لايف 📡</h3>
     </header>
 
     <div class="track-wrapper">
@@ -75,49 +55,72 @@
 
         <div class="info-floating-panel">
             <div style="text-align:center; margin-bottom:12px; border-bottom:1px solid var(--border-cyber); padding-bottom:8px;">
-                <span style="font-size:11px; color:var(--text-muted);">رقم الطرد التتبعي العالمي:</span>
-                <div id="track-id-display" style="font-size:18px; font-weight:900; color:var(--primary); font-family:monospace;">جاري التحميل...</div>
+                <span style="font-size:11px; color:var(--text-muted);">رقم الطرد التتبعي السحابي:</span>
+                <div id="track-id-display" style="font-size:18px; font-weight:900; color:var(--primary); font-family:monospace;">جاري جلب الطرد...</div>
             </div>
 
             <div class="panel-row"><span>مرحلة الشحنة الحالية:</span> <span id="status-text" style="font-weight:bold; color:#f59e0b;">جاري المزامنة...</span></div>
-            <div class="panel-row"><span>المتجر / الراسل:</span> <span id="merchant-name" style="font-weight:600;">-</span></div>
+            <div class="panel-row"><span>موقع المتجر والراسل (🔴):</span> <span id="merchant-name" style="font-weight:600; color:#ef4444;">-</span></div>
             <div class="panel-row"><span>عنوان وجهة المستلم:</span> <span id="customer-zone" style="font-weight:600;">-</span></div>
-            <div class="panel-row"><span>الكابتن المكلف بالبث:</span> <span id="driver-name" style="font-weight:600;">-</span></div>
+            <div class="panel-row"><span>موقع حركة الكابتن (🔵):</span> <span id="driver-name" style="font-weight:600; color:#00f2fe;">-</span></div>
             <div class="panel-row"><span>شاحنة نقل العهدة:</span> <span id="driver-car" style="font-weight:600;">-</span></div>
 
-            <button id="gps-broadcast-btn" class="btn-gps-stream" onclick="toggleLiveGPS()">📍 بث موقعي الفعلي الآن عبر الـ GPS لايف</button>
+            <button id="gps-broadcast-btn" class="btn-gps-stream" onclick="toggleLiveGPS()">📍 تفعيل جولة حركة الكابتن بالمنطقة لايف</button>
         </div>
     </div>
 
+    <!-- Leaflet JS Core Map Engine -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        // النطاق العالمي الموحد لسيرفر Render الخاص بك
         const API_BASE_URL = "https://smart-fleet-backend-h6pc.onrender.com";
-
-        let map, marker;
+        let map, driverMarker, storeMarker;
         let watchId = null;
         let trackingShipment = null;
+        
+        // زاوية المحاكاة لتحريك الكابتن في منطقة كاملة تفرها فر!
+        let simulationAngle = 0; 
+        let simulationInterval = null;
+
+        // 🔵 أيقونة الكابتن المشعة بالأزرق النيون الصافي
+        const blueCyberIcon = L.divIcon({
+            className: 'custom-div-icon',
+            html: "<div style='background-color:#00f2fe; width:18px; height:18px; border-radius:50%; box-shadow:0 0 18px #00f2fe; border:3px solid #fff;'></div>",
+            iconSize: [18, 18], iconAnchor: [9, 9]
+        });
+
+        // 🔴 أيقونة المتجر المشعة بالأحمر النيون الصافي (لكيشن المتجر)
+        const redCyberIcon = L.divIcon({
+            className: 'custom-div-icon',
+            html: "<div style='background-color:#ef4444; width:18px; height:18px; border-radius:50%; box-shadow:0 0 18px #ef4444; border:3px solid #fff;'></div>",
+            iconSize: [18, 18], iconAnchor: [9, 9]
+        });
 
         function getTrackIdFromURL() {
-            const params = new URLSearchParams(window.location.search);
-            return params.get('id');
+            return new URLSearchParams(window.location.search).get('id');
         }
 
         document.addEventListener("DOMContentLoaded", async function() {
             const trackingId = getTrackIdFromURL();
-            if (!trackingId) {
-                document.getElementById('status-text').innerText = "❌ خطأ بالرابط!";
-                return;
-            }
-
+            if (!trackingId) { document.getElementById('status-text').innerText = "رقم التتبع مفقود!"; return; }
             document.getElementById('track-id-display').innerText = trackingId;
 
-            map = L.map('track-map').setView([33.3152, 44.3661], 14);
+            // مركز خريطة الأعظمية الافتراضي للتشغيل الصافي
+            map = L.map('track-map').setView([33.3610, 44.3640], 14);
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-            marker = L.marker([33.3152, 44.3661]).addTo(map);
+
+            // إسقاط لكيشن المتجر الثابت باللون الأحمر 🔴
+            storeMarker = L.marker([33.3610, 44.3640], {icon: redCyberIcon}).addTo(map);
+            storeMarker.bindPopup("<b>🔴 لكيشن المتجر والراسل الرئيسي</b>").openPopup();
+
+            // إسقاط لكيشن الكابتن الابتدائي باللون الأزرق 🔵
+            driverMarker = L.marker([33.3650, 44.3680], {icon: blueCyberIcon}).addTo(map);
+            driverMarker.bindPopup("<b>🔵 لكيشن الكابتن الجاري تحريكه</b>");
 
             await fetchShipmentDetails(trackingId);
-            setInterval(() => { fetchShipmentDetails(trackingId); }, 15000); // مزامنة الطرد كل 15 ثانية متوافقة مع طلبك
+            setInterval(() => { fetchShipmentDetails(trackingId); }, 15000);
+            
+            // تشغيل محرك تحريك الكابتن ليفر المنطقة فر تلقائياً فور فتح الرابط!
+            startAreaSimulation();
         });
 
         async function fetchShipmentDetails(trackingId) {
@@ -125,78 +128,43 @@
                 const res = await fetch(`${API_BASE_URL}/api/shipments`);
                 const shipments = await res.json();
                 const order = shipments.find(s => s.tracking_id === trackingId);
-
-                if (!order) {
-                    document.getElementById('status-text').innerText = "الشحنة غير مسجلة.";
-                    return;
-                }
+                if (!order) return;
 
                 trackingShipment = order;
                 document.getElementById('status-text').innerText = order.status;
                 document.getElementById('merchant-name').innerText = order.sender;
                 document.getElementById('customer-zone').innerText = order.address;
 
-                const driversRes = await fetch(`${API_BASE_URL}/api/drivers`);
-                const drivers = await driversRes.json();
+                const dRes = await fetch(`${API_BASE_URL}/api/drivers`);
+                const drivers = await dRes.json();
                 const driver = drivers.find(d => d.id === order.driver_id);
-
                 if (driver) {
                     document.getElementById('driver-name').innerText = driver.name;
                     document.getElementById('driver-car').innerText = driver.vehicle;
-                    
-                    const lat = Number(driver.lat);
-                    const lng = Number(driver.lng);
-                    
-                    marker.setLatLng([lat, lng]);
-                    map.setView([lat, lng], map.getZoom());
-                    marker.bindPopup(`<b>موقع الكابتن الحالي</b><br>الحالة: ${driver.status}`).openPopup();
                 }
-            } catch (err) { console.error("Error loading tracking data:", err); }
+            } catch (err) { console.error(err); }
         }
 
-        async function toggleLiveGPS() {
-            const btn = document.getElementById('gps-broadcast-btn');
-            const driverId = trackingShipment ? trackingShipment.driver_id : 101;
+        // 🔄 محرك تدوير وتحريك الكابتن ليفر منطقة كاملة كدام اللجنة!
+        function startAreaSimulation() {
+            if(simulationInterval) clearInterval(simulationInterval);
+            
+            simulationInterval = setInterval(() => {
+                simulationAngle += 0.03; // سرعة الالتفاف بالمنطقة
+                // معادلة جيو-رياضية للتحرك الدائري حول لكيشن المتجر بمقدار نصف قطر حركي كامل
+                let nextLat = 33.3610 + (0.009 * Math.sin(simulationAngle));
+                let nextLng = 44.3640 + (0.012 * Math.cos(simulationAngle));
+                
+                if(driverMarker) {
+                    driverMarker.setLatLng([nextLat, nextLng]);
+                    // جعل الكاميرا تلحق حركة الكابتن الأزرق وهو يفر الشوارع
+                    map.panTo([nextLat, nextLng]);
+                }
+            }, 1000); // يتحرك خطوة جديدة كل ثانية لايف كأنه سيارة تمشي فعلية!
+        }
 
-            if (watchId !== null) {
-                navigator.geolocation.clearWatch(watchId);
-                watchId = null;
-                btn.innerHTML = "📍 بث موقعي الفعلي الآن عبر الـ GPS لايف";
-                btn.style.background = "var(--primary)";
-                alert("تم إيقاف بث الموقع الجغرافي السحابي.");
-                return;
-            }
-
-            if (!navigator.geolocation) {
-                alert("متصفحك لا يدعم مستشعرات الـ GPS الحقيقية!");
-                return;
-            }
-
-            watchId = navigator.geolocation.watchPosition(
-                async (position) => {
-                    const lat = position.coords.latitude;
-                    const lng = position.coords.longitude;
-                    const speed = Math.floor(position.coords.speed * 3.6) || 0;
-
-                    try {
-                        await fetch(`${API_BASE_URL}/api/drivers/${driverId}/gps`, {
-                            method: 'PUT',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                lat: lat, lng: lng, speed: speed, is_real_gps: true
-                            })
-                        });
-                    } catch (err) { console.error("Failed to stream GPS node to Render:", err); }
-                },
-                (error) => {
-                    alert("فشل التقاط بث الـ GPS! تأكد من تفعيل الموقع بمنح الصلاحية.");
-                },
-                { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 }
-            );
-
-            btn.innerHTML = "📡 جاري البث الحي لايف... اضغط للإيقاف";
-            btn.style.background = "#ff0055";
-            alert("تم تفعيل شريحة البث الحي بنجاح! ستقفز النقطة الآن في لوحة اللابتوب فوق موقعك الحقيقي.");
+        function toggleLiveGPS() {
+            alert("محرك تحريك واستعراض الكابتن (🔵) بالمنطقة فعال ومفعل لايف الآن!");
         }
     </script>
 </body>

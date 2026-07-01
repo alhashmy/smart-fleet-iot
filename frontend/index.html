@@ -3,477 +3,451 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SMART ROUTE - لوحة تتبع الأسطول السيبرانية</title>
-    
-    <!-- خط القاهرة للتصميم الاحترافي -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
-    
-    <!-- مكتبة الخرائط العالمية Leaflet.js CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
-
+    <title>SMART ROUTE | لوحة التحكم السحابية</title>
+    <!-- Leaflet Map CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         :root {
-            --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-            --glass-bg: rgba(30, 41, 59, 0.7);
-            --glass-border: rgba(255, 255, 255, 0.08);
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
-            --cyber-blue: #38bdf8;
-            --cyber-yellow: #f59e0b;
-            --cyber-green: #10b981;
+            --bg-base: #030712;
+            --surface: #0b1329;
+            --surface-glass: rgba(11, 19, 41, 0.7);
+            --primary: #00f2fe;
+            --primary-glow: rgba(0, 242, 254, 0.35);
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+            --border-cyber: rgba(0, 242, 254, 0.2);
         }
 
         body {
-            font-family: 'Cairo', sans-serif;
-            background: var(--bg-gradient);
-            color: var(--text-main);
-            margin: 0;
-            padding: 20px;
-            min-height: 100vh;
+            margin: 0; padding: 0; box-sizing: border-box;
+            background-color: var(--bg-base); color: var(--text-main);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex; height: 100vh; overflow: hidden;
         }
 
-        .dashboard-container {
-            max-width: 1400px;
-            margin: 0 auto;
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 20px;
+        .cyber-sidebar {
+            width: 260px; background-color: #050b18; border-left: 1px solid var(--border-cyber);
+            display: flex; flex-direction: column; padding: 20px; box-sizing: border-box;
         }
 
-        @media (min-width: 992px) {
-            .dashboard-container {
-                grid-template-columns: 380px 1fr;
-            }
-            .header-panel {
-                grid-column: span 2;
-            }
+        .cyber-logo {
+            font-size: 22px; font-weight: 900; color: #fff; text-shadow: 0 0 10px var(--primary-glow);
+            margin-bottom: 30px; text-align: center; border-bottom: 1px solid var(--border-cyber); padding-bottom: 15px;
         }
 
-        /* تصميم الـ Glassmorphism التكتيكي */
-        .glass-panel {
-            background: var(--glass-bg);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid var(--glass-border);
-            border-radius: 16px;
-            padding: 20px;
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
-            box-sizing: border-box;
+        .nav-item {
+            padding: 12px 15px; border-radius: 8px; color: var(--text-muted); cursor: pointer;
+            margin-bottom: 8px; font-weight: 600; transition: all 0.2s ease; display: flex; align-items: center;
+        }
+        .nav-item:hover, .nav-item.active {
+            background: rgba(0, 242, 254, 0.1); color: var(--primary); box-shadow: inset 3px 0 0 var(--primary);
         }
 
-        .header-panel {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 2px solid rgba(56, 189, 248, 0.2);
-            padding-bottom: 15px;
-            margin-bottom: 10px;
+        .main-content-wrapper { flex: 1; display: flex; flex-direction: column; height: 100%; position: relative; }
+        .view-section { width: 100%; height: 100%; box-sizing: border-box; }
+        .hidden { display: none !important; }
+        .active-view { display: flex !important; }
+
+        #tracking-section { display: flex; flex-direction: row; width: 100%; height: 100%; }
+        .map-container-box { flex: 1; height: 100%; position: relative; }
+        #map { width: 100%; height: 100%; }
+
+        .orders-sidebar-panel {
+            width: 320px; background: #060c1a; border-right: 1px solid var(--border-cyber);
+            display: flex; flex-direction: column; padding: 15px; box-sizing: border-box; overflow-y: auto;
         }
 
-        .header-panel h1 {
-            font-size: 24px;
-            margin: 0;
-            font-weight: 700;
-            color: var(--cyber-blue);
-            text-shadow: 0 0 10px rgba(56, 189, 248, 0.3);
+        .cyber-order-item-card {
+            background: rgba(0,0,0,0.3); border: 1px solid var(--border-cyber); padding: 12px; border-radius: 8px; margin-bottom: 12px; font-size: 13px;
+        }
+        .cyber-select-mini { background: #000; color: var(--primary); border: 1px solid var(--border-cyber); border-radius: 4px; padding: 2px 5px; }
+        .btn-cyber-primary { background: var(--primary); border: none; border-radius: 4px; cursor: pointer; font-weight: bold; padding: 5px; color: #000; }
+
+        .table-view-container { flex: 1; padding: 25px; overflow-y: auto; background: radial-gradient(circle at top, #0b1426 0%, #030712 100%); }
+        .cyber-table { width: 100%; border-collapse: collapse; margin-top: 15px; text-align: right; }
+        .cyber-table th { background: rgba(0, 242, 254, 0.05); color: var(--primary); padding: 12px; border-bottom: 2px solid var(--border-cyber); }
+        .cyber-table td { padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+
+        .counters-strip { display: flex; gap: 10px; padding: 10px; background: #050a14; border-bottom: 1px solid var(--border-cyber); overflow-x: auto; align-items: center; }
+        .status-card-cyber { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); padding: 8px 15px; border-radius: 6px; cursor: pointer; min-width: 100px; text-align: center; }
+        .status-card-cyber.active { border-color: var(--primary); background: rgba(0, 242, 254, 0.05); }
+        .status-card-cyber span { display: block; font-size: 18px; font-weight: bold; color: var(--primary); }
+        .status-card-cyber label { font-size: 11px; color: var(--text-muted); cursor: pointer; }
+
+        .btn-trigger-action-cyber {
+            background: var(--primary); color: #030712; border: none; padding: 10px 22px; border-radius: 6px; cursor: pointer; font-weight: 800; font-size: 13px;
+            box-shadow: 0 0 15px var(--primary-glow); white-space: nowrap; margin-right: auto; transition: all 0.3s ease;
         }
 
-        .system-status {
-            font-size: 14px;
-            background: rgba(16, 185, 129, 0.1);
-            color: var(--cyber-green);
-            padding: 6px 12px;
-            border-radius: 20px;
-            border: 1px solid rgba(16, 185, 129, 0.2);
-        }
-
-        /* حاوية الخريطة */
-        #track-map {
-            height: 600px;
-            border-radius: 12px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            z-index: 1;
-        }
-
-        /* عناصر الاستمارات المدخلة */
-        .form-group {
-            margin-bottom: 12px;
-        }
-
-        .form-group label {
-            display: block;
-            font-size: 13px;
-            margin-bottom: 5px;
-            color: var(--text-muted);
-        }
-
-        .form-control {
-            width: 100%;
-            padding: 10px;
-            background: rgba(15, 23, 42, 0.6);
-            border: 1px solid var(--glass-border);
-            border-radius: 8px;
-            color: #fff;
-            font-family: 'Cairo', sans-serif;
-            box-sizing: border-box;
-            transition: all 0.3s;
-        }
-
-        .form-control:focus {
-            outline: none;
-            border-color: var(--cyber-blue);
-            box-shadow: 0 0 8px rgba(56, 189, 248, 0.2);
-        }
-
-        /* الأزرار الملونة الهوية */
-        .btn {
-            width: 100%;
-            padding: 12px;
-            border: none;
-            border-radius: 8px;
-            font-family: 'Cairo', sans-serif;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-        }
-
-        .btn-blue {
-            background: var(--cyber-blue);
-            color: #0f172a;
-        }
-
-        .btn-blue:hover {
-            background: #7dd3fc;
-            box-shadow: 0 0 15px rgba(56, 189, 248, 0.4);
-        }
-
-        .btn-yellow {
-            background: var(--cyber-yellow);
-            color: #0f172a;
-            margin-bottom: 15px;
-        }
-
-        .btn-yellow:hover {
-            background: #fbbf24;
-            box-shadow: 0 0 15px rgba(245, 158, 11, 0.4);
-        }
-
-        /* تفاصيل الشحنة والكابتن */
-        .info-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            margin-top: 15px;
-            margin-bottom: 15px;
-        }
-
-        .info-item {
-            background: rgba(15, 23, 42, 0.4);
-            padding: 10px;
-            border-radius: 8px;
-            border: 1px solid rgba(255, 255, 255, 0.03);
-        }
-
-        .info-label {
-            font-size: 11px;
-            color: var(--text-muted);
-        }
-
-        .info-value {
-            font-size: 14px;
-            font-weight: 600;
-            margin-top: 4px;
-        }
+        /* استايل الأقسام ثلاثية الأبعاد */
+        .about-main-panel { background: var(--surface-glass); backdrop-filter: blur(20px); border: 1px solid var(--border-cyber); padding: 35px; border-radius: 20px; max-width: 900px; margin: 10px auto; }
+        .about-sub-tabs-nav { display: flex; justify-content: center; gap: 10px; margin-bottom: 30px; border-bottom: 1px solid rgba(0,242,254,0.1); padding-bottom: 15px; }
+        .sub-tab-btn { background: rgba(0,0,0,0.5); border: 1px solid rgba(0,242,254,0.2); color: var(--text-muted); padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px; transition: all 0.3s; }
+        .sub-tab-btn.active-sub { border-color: var(--primary); color: var(--primary); background: rgba(0, 242, 254, 0.1); box-shadow: 0 0 15px var(--primary-glow); }
+        .about-content-card { display: none; animation: cyber3DFlip 0.5s cubic-bezier(0.25, 1, 0.5, 1) forwards; background: rgba(0,0,0,0.4); padding: 25px; border-radius: 12px; }
+        .about-content-card.visible-card { display: block; }
+        @keyframes cyber3DFlip { 0% { opacity: 0; transform: perspective(1000px) rotateX(-25deg); } 100% { opacity: 1; transform: perspective(1000px) rotateX(0deg); } }
+        
+        .status-badge { padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; }
+        .status-badge.active { background: rgba(16, 185, 129, 0.15); color: var(--success); }
+        .status-badge.warning { background: rgba(245, 158, 11, 0.15); color: var(--warning); }
+        .table-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary); }
     </style>
 </head>
 <body>
 
-    <div class="dashboard-container">
+    <!-- القائمة الجانبية للنظام -->
+    <div class="cyber-sidebar">
+        <div class="cyber-logo">SMART ROUTE 🛡️</div>
+        <div class="nav-item active" data-target="tracking-section">🌐 الخريطة والمراقبة</div>
+        <div class="nav-item" data-target="shipments-section">📦 إدارة الشحنات</div>
+        <div class="nav-item" data-target="finance-section">💵 الحسابات المالية</div>
+        <div class="nav-item" data-target="drivers-section">👥 شؤون الكباتن ونماذج التسجيل</div>
+        <div class="nav-item" data-target="archived-drivers-section" style="color: #f59e0b;">🗄️ الأرشيف الرقمي للكباتن</div>
+        <div class="nav-item" data-target="about-section" style="color: #00f2fe; border: 1px dashed rgba(0,242,254,0.4); margin-top:15px;">📘 حول النظام والطلاب</div>
+        <div style="flex: 1;"></div>
+        <div class="nav-item" id="logout-btn" style="color: var(--danger);">🚪 تسجيل الخروج</div>
+    </div>
+
+    <!-- حاوية العرض الرئيسية للمحتوى -->
+    <div class="main-content-wrapper">
         
-        <!-- الهيدر الرئيسي للمنظومة -->
-        <div class="glass-panel header-panel">
-            <h1>SMART ROUTE // لوحة تتبع الأسطول الذكي</h1>
-            <div class="system-status">● النظام متصل بالخادم لايف</div>
+        <!-- 1. شاشة المراقبة والخريطة الرئيسية -->
+        <div id="tracking-section" class="view-section active-view">
+            <div class="orders-sidebar-panel">
+                <h4 id="dynamic-list-title" style="margin-top:0; color:var(--primary);">طلبات قيد المراجعة:</h4>
+                <div id="dynamic-orders-container"></div>
+            </div>
+            <div class="map-container-box">
+                <div class="counters-strip">
+                    <div class="status-card-cyber active" onclick="filterFleet(this, 'عند التاجر')"><span id="count-merchant">0</span><label>عند التاجر</label></div>
+                    <div class="status-card-cyber" onclick="filterFleet(this, 'في الطريق للتاجر')"><span id="count-to-merchant">0</span><label>للتوصيل</label></div>
+                    <div class="status-card-cyber" onclick="filterFleet(this, 'مكتمل')"><span id="count-completed">0</span><label>تم التسليم ✔</label></div>
+                    <button class="btn-trigger-action-cyber" onclick="document.querySelector('.nav-item[data-target=\'shipments-section\']').click();">➕ رفع طلب</button>
+                </div>
+                <div id="map"></div>
+            </div>
         </div>
 
-        <!-- القائمة الجانبية: التحكم والبيانات -->
-        <div class="glass-panel" style="display: flex; flex-direction: column; gap: 15px;">
-            
-            <!-- مشاركة موقع المتجر -->
-            <div>
-                <button class="btn btn-yellow" id="share-merchant-loc-btn" onclick="shareMerchantLocation()">
-                    📍 مشاركة موقع المتجر (تثبيت البث بالأصفر)
-                </button>
-            </div>
+        <!-- 2. شاشة إدارة الطرود والشحنات -->
+        <div id="shipments-section" class="view-section table-view-container hidden">
+            <h2 style="color: var(--primary);">📦 معالجة وتوليد الطرود السحابية</h2>
+            <!-- فورم إنشاء الطرود -->
+            <form id="shipment-creation-form" style="background: rgba(255,255,255,0.02); padding: 20px; border-radius: 8px; border: 1px solid var(--border-cyber); display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 25px;">
+                <div><label>اسم البيج / الراسل</label><input type="text" id="ship-sender" required style="width:100%; background:#000; color:#fff; border:1px solid var(--border-cyber); padding:8px;"></div>
+                <div><label>اسم الزبون المستلم</label><input type="text" id="ship-receiver" required style="width:100%; background:#000; color:#fff; border:1px solid var(--border-cyber); padding:8px;"></div>
+                <div><label>العنوان / منطقة الزبون</label><input type="text" id="ship-address" required style="width:100%; background:#000; color:#fff; border:1px solid var(--border-cyber); padding:8px;"></div>
+                <div><label>مبلغ الـ COD المستقطع</label><input type="number" id="ship-cod" required style="width:100%; background:#000; color:#fff; border:1px solid var(--border-cyber); padding:8px;"></div>
+                <div><label>الكابتن المكلف</label><select id="ship-assign-driver" style="width:100%; background:#000; color:#fff; border:1px solid var(--border-cyber); padding:8px;"></select></div>
+                <div><button type="submit" style="width:100%; padding:10px; background:var(--primary); font-weight:bold; cursor:pointer; color:#000; border:none; margin-top:18px;">إصدار الباركود وحفظ بالـ DB 🚀</button></div>
+            </form>
+            <table class="cyber-table">
+                <thead><tr><th>رقم التتبع</th><th>الراسل</th><th>المستلم</th><th>الوجهة</th><th>الكابتن المكلف</th><th>الحالة الحالية</th></tr></thead>
+                <tbody id="shipments-table-body"></tbody>
+            </table>
+        </div>
 
-            <!-- واجهة تفاصيل التتبع الفعلي -->
-            <div style="border-top: 1px solid rgba(255,255,255,0.05); padding-top: 10px;">
-                <h3 style="margin: 0 0 10px 0; font-size: 16px; color: var(--cyber-blue);">📦 حالة الشحنة الفورية</h3>
-                <div class="info-grid">
-                    <div class="info-item">
-                        <div class="info-label">رقم التتبع</div>
-                        <div class="info-value" id="track-id-display">--</div>
-                    </div>
-                    <div class="info-item">
-                        <div class="info-label">حالة الشحنة</div>
-                        <div class="info-value" id="status-text" style="color: var(--cyber-green);">جاري جلبها...</div>
-                    </div>
-                    <div class="info-item">
-                        <div class="info-label">المتجر المرسل</div>
-                        <div class="info-value" id="merchant-name">--</div>
-                    </div>
-                    <div class="info-item">
-                        <div class="info-label">عنوان الزبون</div>
-                        <div class="info-value" id="customer-zone">--</div>
-                    </div>
-                    <div class="info-item">
-                        <div class="info-label">اسم الكابتن</div>
-                        <div class="info-value" id="driver-name">--</div>
-                    </div>
-                    <div class="info-item">
-                        <div class="info-label">العجلة / المركبة</div>
-                        <div class="info-value" id="driver-car">--</div>
-                    </div>
+        <!-- 3. شاشة الحسابات المالية -->
+        <div id="finance-section" class="view-section table-view-container hidden">
+            <h2 style="color: var(--primary);">💵 الخزينة والصفاء المالي</h2>
+            <table class="cyber-table">
+                <thead><tr><th>اسم المندوب</th><th>طرود العهدة</th><th>مبيعات الواصل</th><th>صافي الأرباح</th><th>الحالة الحالية</th></tr></thead>
+                <tbody id="finance-table-body"></tbody>
+            </table>
+        </div>
+
+        <!-- 4. شاشة التحكم وحسابات الكباتن (التعديل الشامل) -->
+        <div id="drivers-section" class="view-section table-view-container hidden">
+            <h2 style="color: var(--primary);">👥 إنشاء وتأمين الكباتن الجدد بالنظام</h2>
+            
+            <!-- فورم إنشاء كابتن جديد مع رفع صورة وتحويلها سحابياً لـ Base64 -->
+            <form id="driver-creation-form" style="background: rgba(0, 242, 254, 0.03); padding: 20px; border-radius: 12px; border: 1px dashed var(--primary); display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 25px;">
+                <div><label>الاسم الكامل للكابتن</label><input type="text" id="drv-name" required style="width:100%; background:#000; color:#fff; border:1px solid var(--border-cyber); padding:8px;"></div>
+                <div><label>رقم الهاتف</label><input type="text" id="drv-phone" required style="width:100%; background:#000; color:#fff; border:1px solid var(--border-cyber); padding:8px;"></div>
+                <div><label>نوع السيارة / الشاحنة</label><input type="text" id="drv-vehicle" required style="width:100%; background:#000; color:#fff; border:1px solid var(--border-cyber); padding:8px;"></div>
+                <div><label>منطقة التغطية</label><input type="text" id="drv-zone" required style="width:100%; background:#000; color:#fff; border:1px solid var(--border-cyber); padding:8px;"></div>
+                <div><label>رفع الصورة الشخصية الهوية</label><input type="file" id="drv-image" accept="image/*" required style="width:100%; color:#fff; padding:5px;"></div>
+                <div><button type="submit" style="width:100%; padding:10px; background:var(--success); font-weight:bold; cursor:pointer; color:#fff; border:none; margin-top:18px;">تسجيل وأرشفة الكابتن بالـ Cloud 💾</button></div>
+            </form>
+
+            <h3 style="color:#fff;">جدول الكباتن النشطين حالياً:</h3>
+            <table class="cyber-table">
+                <thead><tr><th>الصورة</th><th>معرف الـ ID</th><th>الاسم الكامل</th><th>رقم الهاتف</th><th>شاحنة العهدة</th><th>منطقة التغطية</th><th>الإجراء السيرفر</th></tr></thead>
+                <tbody id="crud-drivers-table-body"></tbody>
+            </table>
+        </div>
+
+        <!-- 5. شاشة الكباتن المؤرشفين المستقلة الجديدة -->
+        <div id="archived-drivers-section" class="view-section table-view-container hidden">
+            <h2 style="color: var(--warning);">🗄️ الأرشيف الرقمي والمستندات الملغاة للكباتن</h2>
+            <p style="color: var(--text-muted); font-size:13px;">هذه اللائحة تحتوي على حسابات المناديب الذين تم تجميد صلاحيات بث الـ IoT الخاصة بهم أو نقلهم للأرشيف.</p>
+            <table class="cyber-table">
+                <thead><tr><th>الصورة</th><th>معرف الـ ID</th><th>الاسم الكامل</th><th>رقم الهاتف</th><th>الشاحنة</th><th>المنطقة</th><th>إجراء فك التجميد</th></tr></thead>
+                <tbody id="archived-drivers-table-body"></tbody>
+            </table>
+        </div>
+
+        <!-- 6. شاشة حول النظام والطلاب -->
+        <div id="about-section" class="view-section table-view-container hidden">
+            <div class="about-main-panel">
+                <div style="text-align: center; margin-bottom: 25px;">
+                    <div style="font-size: 45px; text-shadow: 0 0 20px var(--primary-glow); margin-bottom: 5px;">🛡️</div>
+                    <h1 style="color: var(--primary); margin: 0; font-size: 24px;">مشروع SMART ROUTE</h1>
+                    <p style="color: var(--text-muted); font-size: 13px;">جامعة آشور - كلية الهندسة - قسم هندسة الأمن السيبراني</p>
+                </div>
+                <div class="about-sub-tabs-nav">
+                    <button class="sub-tab-btn active-sub" onclick="switchAboutTab(this, 'about-work-method')">💡 طريقة عمل المشروع</button>
+                    <button class="sub-tab-btn" onclick="switchAboutTab(this, 'about-languages')">🛠️ اللغات والتقنيات</button>
+                    <button class="sub-tab-btn" onclick="switchAboutTab(this, 'about-students')">👥 أسماء الطلاب المنفذين</button>
+                    <button class="sub-tab-btn" onclick="switchAboutTab(this, 'about-duration')" style="border-color: #ef4444; color:#fff;">⏳ مدة العمل</button>
+                </div>
+                <div id="about-work-method" class="about-content-card visible-card">
+                    <p style="color: #d1d5db; font-size: 14px; line-height: 1.8;">هو عبارة عن نظام هندسي متكامل يربط حركة النقل اللوجستي بسيرفرات مشفرة سحابياً لمنع تزوير المواقع الجغرافية وضمان أمان شحنات التجارة الإلكترونية بالاعتماد على بث الـ IoT.</p>
+                </div>
+                <div id="about-languages" class="about-content-card">
+                    <span style="background:rgba(0,242,254,0.1); padding:5px 10px; margin:5px; display:inline-block; border-radius:5px;">Python / FastAPI Core</span>
+                    <span style="background:rgba(0,242,254,0.1); padding:5px 10px; margin:5px; display:inline-block; border-radius:5px;">Neon PostgreSQL DB</span>
+                    <span style="background:rgba(0,242,254,0.1); padding:5px 10px; margin:5px; display:inline-block; border-radius:5px;">Leaflet Maps Core Engine</span>
+                </div>
+                <div id="about-students" class="about-content-card">
+                    <p>سجاد زين العابدين حامد (C) | ذو الفقار اسعد حميد (C) | علي رضا حسن حاج مراد (D) | مصطفى علي حسين (F) | علي ليث علي (F)</p>
+                </div>
+                <div id="about-duration" class="about-content-card" style="text-align: center;">
+                    <h3 style="color:#ef4444;">12 ساعة عمل متواصلة ⚡</h3>
                 </div>
             </div>
-
-            <!-- استمارة إضافة كابتن جديد -->
-            <div style="border-top: 1px solid rgba(255,255,255,0.05); padding-top: 15px;">
-                <h3 style="margin: 0 0 12px 0; font-size: 16px; color: var(--cyber-blue);">➕ إنشاء كابتن جديد بالنظام</h3>
-                <form id="driver-form" onsubmit="createNewDriver(event)">
-                    <div class="form-group">
-                        <label>اسم الكابتن الكامل:</label>
-                        <input type="text" id="new-driver-name" class="form-control" required placeholder="مثال: يوسف صلاح">
-                    </div>
-                    <div class="form-group">
-                        <label>رقم هاتف الكابتن:</label>
-                        <input type="tel" id="new-driver-phone" class="form-control" required placeholder="07xxxxxxxxx">
-                    </div>
-                    <div class="form-group">
-                        <label>السكن / المحافظة:</label>
-                        <input type="text" id="new-driver-city" class="form-control" required placeholder="بغداد - الأعظمية">
-                    </div>
-                    <div class="form-group">
-                        <label>العنوان التفصيلي:</label>
-                        <input type="text" id="new-driver-address" class="form-control" required placeholder="المحلة / الزقاق">
-                    </div>
-                    <div class="form-group">
-                        <label>الكود المرجعي الفريد (ID):</label>
-                        <input type="text" id="new-driver-ref" class="form-control" required placeholder="مثال: DRV-505">
-                    </div>
-                    <div class="form-group">
-                        <label>رفع صورة الكابتن الشخصية:</label>
-                        <input type="file" id="new-driver-photo" class="form-control" accept="image/*">
-                    </div>
-                    <button type="submit" class="btn btn-blue" style="margin-top: 10px;">حفظ الكابتن الجديد في السيرفر</button>
-                </form>
-            </div>
-
-        </div>
-
-        <!-- حاوية الخريطة الجغرافية -->
-        <div class="glass-panel">
-            <div id="track-map"></div>
         </div>
 
     </div>
 
-    <!-- مكتبة الخرائط Leaflet.js JavaScript -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <!-- كونسول إشعار إبداع الطلاب المنبثق -->
+    <div id="cyber-welcome-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(3, 7, 18, 0.85); backdrop-filter: blur(8px); z-index: 99999; justify-content: center; align-items: center;">
+        <div style="background: rgba(17, 24, 39, 0.95); border: 2px solid #00f2fe; box-shadow: 0 0 35px rgba(0, 242, 254, 0.5); width: 90%; max-width: 450px; padding: 30px; border-radius: 16px; text-align: center; color: #fff;">
+            <h2>جامعة آشور</h2>
+            <h3>كلية الهندسة - قسم هندسة الأمن السيبراني</h3>
+            <p>🚀 هذا المشروع من إبداع وتنفيذ الطلاب المتميزين:</p>
+            <div style="background: rgba(0, 0, 0, 0.4); border-radius: 10px; padding: 15px; text-align: right; font-size:13px; line-height:2;">
+                1. سجاد زين العابدين حامد (Group C)<br>2. ذو الفقار اسعد حميد (Group C)<br>3. علي رضا حسن حاج مراد (Group D)<br>4. مصطفى علي حسين (Group F)<br>5. علي ليث علي (Group F)
+            </div>
+            <button onclick="closeCyberWelcomeModal()" style="background: #00f2fe; color: #030712; border: none; padding: 12px 30px; font-size: 14px; font-weight: 700; border-radius: 8px; cursor: pointer; width: 100%; margin-top:20px;">الدخول وتشغيل لوحة التحكم 🚀</button>
+        </div>
+    </div>
 
+    <!-- Leaflet JS Core Map -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        // النطاق الموحد لسيرفر ريندر الخاص بك
         const API_BASE_URL = "https://smart-fleet-backend-h6pc.onrender.com";
-        let map, driverMarker, merchantMarker;
-        let trackingShipment = null;
+        let drivers = [];
+        let shipments = [];
+        let currentFilter = 'عند التاجر'; 
+        let map, markersGroup;
 
-        // تهيئة الأيقونات الملونة لهوية المشروع الرسمية (كابتن أزرق - متجر أصفر)
-        const blueIcon = new L.Icon({
-            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
-            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-            iconSize: [25, 41],
-            iconAnchor: [12, 41],
-            popupAnchor: [1, -34],
-            shadowSize: [41, 41]
+        // الأيقونة النيون السايبربانك للكابتن على الخريطة الرئيسية
+        const activeDriverIcon = L.divIcon({
+            className: 'custom-div-icon',
+            html: "<div style='background-color:#00f2fe; width:16px; height:16px; border-radius:50%; box-shadow:0 0 15px #00f2fe; border:2px solid #fff;'></div>",
+            iconSize: [16, 16], iconAnchor: [8, 8]
         });
 
-        const yellowIcon = new L.Icon({
-            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-yellow.png',
-            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-            iconSize: [25, 41],
-            iconAnchor: [12, 41],
-            popupAnchor: [1, -34],
-            shadowSize: [41, 41]
+        document.addEventListener("DOMContentLoaded", function() {
+            document.getElementById('logout-btn').addEventListener('click', () => { window.location.href = 'login.html'; });
+            initMainDashboard();
+            setupTabRouter();
+            setupDriverCreationForm();
         });
 
-        // دالة استخراج الـ ID مالت الشحنة من الرابط تلقائياً
-        function getTrackIdFromURL() {
-            const params = new URLSearchParams(window.location.search);
-            return params.get('id');
+        async function initMainDashboard() {
+            if (!map) {
+                map = L.map('map').setView([33.3610, 44.3640], 13);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+                markersGroup = L.layerGroup().addTo(map);
+            }
+            await syncData();
+            setInterval(syncData, 15000); // مزامنة حاسمة كل 15 ثانية مبرمجة ومقفلة
+
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('triggerWelcome') === 'true') {
+                document.getElementById('cyber-welcome-modal').style.display = 'flex';
+            }
         }
 
-        // تشغيل المنظومة عند اكتمال تحميل الصفحة
-        document.addEventListener("DOMContentLoaded", async function() {
-            const trackingId = getTrackIdFromURL();
-            
-            // بناء الخريطة وتثبيت الإحداثيات الأولية على بغداد
-            map = L.map('track-map').setView([33.3152, 44.3661], 13);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '© OpenStreetMap contributors'
-            }).addTo(map);
-            
-            // ماركر الكابتن الابتدائي (باللون الأزرق)
-            driverMarker = L.marker([33.3152, 44.3661], {icon: blueIcon}).addTo(map);
-
-            if (!trackingId) {
-                document.getElementById('status-text').innerText = "❌ خطأ: لم يتم تمرير id بالرابط!";
-                return;
-            }
-            
-            document.getElementById('track-id-display').innerText = trackingId;
-
-            // استدعاء فوري للبيانات
-            await fetchShipmentDetails(trackingId);
-            
-            // نبض المزامنة المتزامن (كل 15 ثانية لجلب التحديثات من قاعدة البيانات من دون عمل refresh)
-            setInterval(() => { 
-                fetchShipmentDetails(trackingId); 
-            }, 15000); 
-        });
-
-        // دالة إنشاء كابتن جديد وإرسال البيانات للسيرفر
-        async function createNewDriver(event) {
-            event.preventDefault();
-            
-            const name = document.getElementById('new-driver-name').value;
-            const phone = document.getElementById('new-driver-phone').value;
-            const city = document.getElementById('new-driver-city').value;
-            const address = document.getElementById('new-driver-address').value;
-            const driverId = document.getElementById('new-driver-ref').value;
-
-            const driverData = {
-                id: driverId,
-                name: name,
-                phone: phone,
-                city: city,
-                address: address,
-                status: "active",
-                lat: 33.3152, 
-                lng: 44.3661
-            };
-
+        async function syncData() {
             try {
-                const res = await fetch(`${API_BASE_URL}/api/drivers`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(driverData)
-                });
+                const [dRes, sRes] = await Promise.all([
+                    fetch(`${API_BASE_URL}/api/drivers`),
+                    fetch(`${API_BASE_URL}/api/shipments`)
+                ]);
+                drivers = await dRes.json();
+                shipments = await sRes.json();
                 
-                if(res.ok) {
-                    alert("✅ تم تسجيل وإنشاء الكابتن الجديد بنجاح في قاعدة البيانات!");
-                    document.getElementById('driver-form').reset();
-                } else {
-                    alert("❌ حدث خطأ أثناء الحفظ بالسيرفر، تأكد من صحة الحقول.");
-                }
-            } catch (err) {
-                console.error("Error network post:", err);
-                alert("❌ فشل الاتصال بالـ Backend.");
-            }
+                renderSidebarOrders();
+                renderShipmentsTable();
+                renderFinancials();
+                renderCrudTables();
+                updateCounters();
+                populateDropdown();
+            } catch (err) { console.error("Sync mismatch node error:", err); }
         }
 
-        // دالة مشاركة موقع المتجر الفعلي عبر الـ GPS وتثبيته باللون الأصفر
-        function shareMerchantLocation() {
-            if (!navigator.geolocation) {
-                alert("متصفحك الحالي لا يدعم ميزة تحديد الموقع الجغرافي GPS!");
-                return;
-            }
+        function renderSidebarOrders() {
+            const container = document.getElementById('dynamic-orders-container');
+            if (!container) return;
+            container.innerHTML = '';
+            markersGroup.clearLayers();
 
-            navigator.geolocation.getCurrentPosition(async (position) => {
-                const lat = position.coords.latitude;
-                const lng = position.coords.longitude;
-
-                // تحديث أو بناء ماركر المتجر باللون الأصفر التكتيكي
-                if (merchantMarker) {
-                    merchantMarker.setLatLng([lat, lng]);
-                } else {
-                    merchantMarker = L.marker([lat, lng], {icon: yellowIcon}).addTo(map);
-                }
-                merchantMarker.bindPopup("🏬 موقع المتجر الرسمي (تم البث مشاركة لايف)").openPopup();
-                map.setView([lat, lng], 14);
-
-                // رفع الإحداثيات المحدثة للسيرفر
-                try {
-                    await fetch(`${API_BASE_URL}/api/merchants/location`, {
-                        method: 'PUT',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ lat: lat, lng: lng })
-                    });
-                    alert("📍 تم مشاركة وتثبيت إحداثيات المتجر الحالية بنجاح!");
-                } catch (err) {
-                    console.error("Error update merchant:", err);
-                }
-            }, () => {
-                alert("فشل التقاط إحداثيات المتجر، يرجى تفعيل صلاحية الوصول للموقع في المتصفح.");
-            }, { enableHighAccuracy: true });
-        }
-
-        // دالة جلب تفاصيل الشحنة ومحاكاة دقة الحركة الدائرية للكباتن
-        async function fetchShipmentDetails(trackingId) {
-            try {
-                const res = await fetch(`${API_BASE_URL}/api/shipments`);
-                const shipments = await res.json();
-                const order = shipments.find(s => s.tracking_id === trackingId);
-
-                if (!order) {
-                    document.getElementById('status-text').innerText = "الشحنة غير متوفرة.";
-                    return;
-                }
-
-                trackingShipment = order;
-                document.getElementById('status-text').innerText = order.status;
-                document.getElementById('merchant-name').innerText = order.sender;
-                document.getElementById('customer-zone').innerText = order.address;
-
-                const driversRes = await fetch(`${API_BASE_URL}/api/drivers`);
-                const drivers = await driversRes.json();
-                const driver = drivers.find(d => d.id === order.driver_id);
+            const filtered = shipments.filter(s => s.status === currentFilter);
+            filtered.forEach(order => {
+                // تصفية الكباتن غير المؤرشفين فقط للخريطة النشطة
+                const driver = drivers.find(d => d.id === order.driver_id && !d.is_archived);
+                const card = document.createElement('div');
+                card.className = 'cyber-order-item-card';
+                card.innerHTML = `
+                    <span style="color:var(--primary); font-weight:bold;"># ${order.tracking_id}</span>
+                    <p style="margin:5px 0; font-size:12px;"><b>البيج:</b> ${order.sender}<br><b>المستلم:</b> ${order.receiver}</p>
+                    <button class="btn-cyber-primary" style="width:100%; font-size:11px;" onclick="copyTrackingLink('${order.tracking_id}')">🔗 نسخ رابط لكيشن التتبع</button>
+                `;
+                container.appendChild(card);
 
                 if (driver) {
-                    document.getElementById('driver-name').innerText = driver.name;
-                    document.getElementById('driver-car').innerText = driver.vehicle || "دراجة نارية";
-
-                    let lat = Number(driver.lat);
-                    let lng = Number(driver.lng);
-
-                    // ======= تحسين دقة محاكاة حركة الكباتن في مسار دائري (نصف قطر نصف كيلومتر) =======
-                    // نستخدم التوقيت اللحظي لخلق زاوية دوران سلسة ومستمرة في النبضات
-                    const timestamp = new Date().getTime() / 4000; 
-                    const radiusInKm = 0.5; // نصف كيلو متر بالضبط
-                    
-                    // تحويل الإزاحة بالكيلومترات إلى درجات جغرافية دقيقة تعتمد على إحداثيات الموقع الحالي
-                    const deltaLat = (radiusInKm / 6371) * (180 / Math.PI);
-                    const deltaLng = (radiusInKm / 6371) * (180 / Math.PI) / Math.cos(lat * Math.PI / 180);
-
-                    // حساب الموقع المحدث على المحيط الدائري باستخدام جيب وجيب تمام الزاوية اللحظية
-                    const smoothLat = lat + deltaLat * Math.sin(timestamp);
-                    const smoothLng = lng + deltaLng * Math.cos(timestamp);
-
-                    // تحديث ماركر الكابتن الأزرق على الإحداثيات الانسيابية المحدثة
-                    driverMarker.setLatLng([smoothLat, smoothLng]);
-                    driverMarker.setIcon(blueIcon); 
-                    
-                    driverMarker.bindPopup(`🏍️ الكابتن: ${driver.name}<br>تتبع حي ودقيق بمسار مسافته نصف كيلو`).openPopup();
+                    const marker = L.marker([Number(driver.lat), Number(driver.lng)], {icon: activeDriverIcon}).addTo(markersGroup);
+                    marker.bindPopup(`<b>الكابتن النشط: ${driver.name}</b>`);
                 }
-            } catch (err) {
-                console.error("Error loading tracking heartbeat data:", err);
+            });
+        }
+
+        function setupDriverCreationForm() {
+            const form = document.getElementById('driver-creation-form');
+            if(!form) return;
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const fileInput = document.getElementById('drv-image').files[0];
+                const reader = new FileReader();
+                
+                reader.onloadend = async function() {
+                    const base64Image = reader.result;
+                    const payload = {
+                        name: document.getElementById('drv-name').value,
+                        phone: document.getElementById('drv-phone').value,
+                        vehicle: document.getElementById('drv-vehicle').value,
+                        zone: document.getElementById('drv-zone').value,
+                        image: base64Image,
+                        is_archived: false // ينزل كحساب نشط بالبداية
+                    };
+
+                    const res = await fetch(`${API_BASE_URL}/api/drivers`, {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify(payload)
+                    });
+                    if(res.ok) {
+                        alert("تم تسجيل الكابتن ورفع صورته السحابية بنجاح! 🚀");
+                        form.reset();
+                        syncData();
+                    }
+                };
+                if(fileInput) reader.readAsDataURL(fileInput);
+            });
+        }
+
+        async function toggleArchiveDriver(driverId, shouldArchive) {
+            // كود الأرشفة المباشر للسيرفر لتغيير حالة الكابتن
+            const res = await fetch(`${API_BASE_URL}/api/drivers/${driverId}/archive`, {
+                method: 'PUT',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ is_archived: shouldArchive })
+            });
+            if(res.ok) {
+                alert(shouldArchive ? "تم نقل الكابتن إلى الأرشيف السري بنجاح" : "تم إلغاء أرشفة الكابتن وإعادته للخدمة");
+                syncData();
             }
         }
+
+        function renderCrudTables() {
+            const activeTbody = document.getElementById('crud-drivers-table-body');
+            const archivedTbody = document.getElementById('archived-drivers-table-body');
+            if(!activeTbody || !archivedTbody) return;
+
+            activeTbody.innerHTML = '';
+            archivedTbody.innerHTML = '';
+
+            drivers.forEach(d => {
+                const avatar = d.image || "https://via.placeholder.com/40";
+                const tr = document.createElement('tr');
+                
+                if(!d.is_archived) {
+                    // جدول الكباتن النشطين
+                    tr.innerHTML = `
+                        <td><img src="${avatar}" class="table-avatar"></td>
+                        <td>#${d.id}</td>
+                        <td><b>${d.name}</b></td>
+                        <td>${d.phone}</td>
+                        <td>${d.vehicle}</td>
+                        <td>${d.zone}</td>
+                        <td><button style="background:var(--danger); color:#fff; border:none; padding:5px 10px; cursor:pointer; border-radius:4px;" onclick="toggleArchiveDriver(${d.id}, true)">🗄️ أرشفة الحساب</button></td>
+                    `;
+                    activeTbody.appendChild(tr);
+                } else {
+                    // جدول الكباتن المؤرشفين المستقل المضاف بطلبك
+                    tr.innerHTML = `
+                        <td><img src="${avatar}" class="table-avatar"></td>
+                        <td>#${d.id}</td>
+                        <td><span style="color:var(--text-muted);">${d.name}</span></td>
+                        <td>${d.phone}</td>
+                        <td>${d.vehicle}</td>
+                        <td>${d.zone}</td>
+                        <td><button style="background:var(--success); color:#fff; border:none; padding:5px 10px; cursor:pointer; border-radius:4px;" onclick="toggleArchiveDriver(${d.id}, false)">🔓 إلغاء الأرشفة</button></td>
+                    `;
+                    archivedTbody.appendChild(tr);
+                }
+            });
+        }
+
+        function copyTrackingLink(id) {
+            const link = window.location.origin + window.location.pathname.replace('index.html', 'track.html') + '?id=' + id;
+            navigator.clipboard.writeText(link).then(() => alert(`تم نسخ الرابط بنجاح! 🚀\n\n${link}`));
+        }
+        function filterFleet(el, status) {
+            currentFilter = status;
+            document.querySelectorAll('.status-card-cyber').forEach(c => c.classList.remove('active'));
+            el.classList.add('active');
+            renderSidebarOrders();
+        }
+        function setupTabRouter() {
+            document.querySelectorAll('.nav-item').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    const target = this.getAttribute('data-target');
+                    document.querySelectorAll('.view-section').forEach(s => { s.classList.remove('active-view'); s.classList.add('hidden'); });
+                    document.getElementById(target).classList.remove('hidden');
+                    document.getElementById(target).classList.add('active-view');
+                    if(target === 'tracking-section' && map) setTimeout(() => { map.invalidateSize(); }, 200);
+                });
+            });
+        }
+        function updateCounters() {
+            document.getElementById('count-merchant').innerText = shipments.filter(s => s.status === 'عند التاجر').length;
+            document.getElementById('count-to-merchant').innerText = shipments.filter(s => s.status === 'في الطريق للتاجر').length;
+            document.getElementById('count-completed').innerText = shipments.filter(s => s.status === 'مكتمل').length;
+        }
+        function populateDropdown() {
+            const s = document.getElementById('ship-assign-driver');
+            if(s) s.innerHTML = drivers.filter(d => !d.is_archived).map(d => `<option value="${d.id}">${d.name}</option>`).join('');
+        }
+        function renderShipmentsTable() {
+            const t = document.getElementById('shipments-table-body'); if(!t) return; t.innerHTML = shipments.map(s => `<tr><td><b>${s.tracking_id}</b></td><td>${s.sender}</td><td>${s.receiver}</td><td>${s.address}</td><td>${s.driver_id}</td><td><span class="status-badge warning">${s.status}</span></td></tr>`).join('');
+        }
+        function renderFinancials() {
+            const t = document.getElementById('finance-table-body'); if(!t) return; t.innerHTML = drivers.map(d => `<tr><td><b>${d.name}</b></td><td>${shipments.filter(s=>s.driver_id===d.id).length} طرد</td><td>${Number(d.sales).toLocaleString()} د.ع</td><td>${Number(d.profit).toLocaleString()} د.ع</td><td><span class="status-badge active">${d.fin_status}</span></td></tr>`).join('');
+        }
+        function switchAboutTab(btn, id) {
+            document.querySelectorAll('.sub-tab-btn').forEach(b => b.classList.remove('active-sub')); btn.classList.add('active-sub');
+            document.querySelectorAll('.about-content-card').forEach(c => c.classList.remove('visible-card')); document.getElementById(id).classList.add('visible-card');
+        }
+        function closeCyberWelcomeModal() { document.getElementById('cyber-welcome-modal').style.display = 'none'; }
     </script>
 </body>
 </html>
